@@ -295,3 +295,170 @@ export async function abrirComanda(params: {
 
   return handleResponse<PedidoDTO>(res);
 }
+
+
+/* =========================
+   PRODUCTOS / CATÁLOGO
+   ========================= */
+
+export interface ProductoCatalogoDTO {
+  productoId: number;
+  nombre: string;
+  descripcion?: string | null;
+  precio: number; // Precio de venta
+}
+
+/**
+ * Categoría con su lista de productos
+ */
+export interface CategoriaConProductosDTO {
+  categoriaId: number;
+  nombre: string;
+  productos: ProductoCatalogoDTO[];
+}
+
+/* =========================
+   PEDIDO DETALLE
+   ========================= */
+
+export interface PedidoDetalleDTO {
+  pedidoDetalleId: number;
+  pedidoId: number;
+  productoId: number;
+
+  nombreProducto: string;
+  categoriaNombre?: string | null;
+
+  cantidad: number;
+  precioUnitario: number;
+
+  /**
+   * Subtotal calculado en backend. Si viene null,
+   * en el frontend usamos cantidad * precioUnitario.
+   */
+  subtotal?: number | null;
+}
+
+/* =========================
+   INPUTS PARA ACCIONES
+   ========================= */
+
+export interface AgregarProductoAPedidoInput {
+  pedidoId: number;
+  productoId: number;
+  cantidad: number;
+}
+
+export interface ActualizarCantidadDetalleInput {
+  pedidoDetalleId: number;
+  cantidad: number;
+}
+
+
+/* =========================
+   CATÁLOGO DE PRODUCTOS
+   ========================= */
+
+/**
+ * Devuelve el catálogo de productos agrupado por categoría.
+ * Endpoint sugerido: GET /api/catalogo/productos
+ */
+export async function obtenerCatalogoConProductos(): Promise<CategoriaConProductosDTO[]> {
+  const res = await fetch('/api/catalogo/productos', {
+    method: 'GET',
+    cache: 'no-store',
+  });
+
+  return handleResponse<CategoriaConProductosDTO[]>(res);
+}
+
+/* =========================
+   DETALLE DEL PEDIDO
+   ========================= */
+
+/**
+ * Devuelve el detalle de la comanda/pedido.
+ * Endpoint sugerido: GET /api/pedidos/[pedidoId]/detalles
+ */
+export async function obtenerPedidoDetalle(
+  pedidoId: number
+): Promise<PedidoDetalleDTO[]> {
+  const res = await fetch(`/api/pedidos/${pedidoId}/detalles`, {
+    method: 'GET',
+    cache: 'no-store',
+  });
+
+  return handleResponse<PedidoDetalleDTO[]>(res);
+}
+
+/**
+ * Agrega un producto al pedido con la cantidad indicada.
+ * Endpoint sugerido: POST /api/pedidos/[pedidoId]/detalles
+ */
+export async function agregarProductoAPedido(
+  input: AgregarProductoAPedidoInput
+): Promise<PedidoDetalleDTO> {
+  const { pedidoId, productoId, cantidad } = input;
+
+  const res = await fetch(`/api/pedidos/${pedidoId}/detalles`, {
+    method: 'POST',
+    cache: 'no-store',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({ productoId, cantidad }),
+  });
+
+  return handleResponse<PedidoDetalleDTO>(res);
+}
+
+/**
+ * Actualiza la cantidad de un detalle de pedido.
+ * Endpoint sugerido: PUT /api/pedidos/detalles/[pedidoDetalleId]
+ */
+export async function actualizarCantidadDetalle(
+  input: ActualizarCantidadDetalleInput
+): Promise<PedidoDetalleDTO> {
+  const { pedidoDetalleId, cantidad } = input;
+
+  const res = await fetch(`/api/pedidos/detalles/${pedidoDetalleId}`, {
+    method: 'PUT',
+    cache: 'no-store',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({ cantidad }),
+  });
+
+  return handleResponse<PedidoDetalleDTO>(res);
+}
+
+/**
+ * Elimina un producto (detalle) de la comanda.
+ * Endpoint sugerido: DELETE /api/pedidos/detalles/[pedidoDetalleId]
+ */
+export async function eliminarDetallePedido(
+  pedidoDetalleId: number
+): Promise<{ ok: boolean }> {
+  const res = await fetch(`/api/pedidos/detalles/${pedidoDetalleId}`, {
+    method: 'DELETE',
+    cache: 'no-store',
+  });
+
+  return handleResponse<{ ok: boolean }>(res);
+}
+
+/**
+ * Finaliza el pedido/comanda.
+ * Endpoint sugerido: POST /api/pedidos/[pedidoId]/finalizar
+ */
+export async function finalizarPedido(
+  pedidoId: number
+): Promise<{ ok: boolean }> {
+  const res = await fetch(`/api/pedidos/${pedidoId}/finalizar`, {
+    method: 'POST',
+    cache: 'no-store',
+  });
+
+  return handleResponse<{ ok: boolean }>(res);
+}

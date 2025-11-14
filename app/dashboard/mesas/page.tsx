@@ -10,10 +10,12 @@ import {
 import { useAuth } from '@/context/AuthContext';
 import { useToast } from '@/context/ToastContext';
 import { Loader2, AlertCircle } from 'lucide-react';
+import { useRouter } from 'next/navigation';
 
 export default function MesasPage() {
   const { usuario } = useAuth();
-  const { showToast } = useToast(); // Ajusta según cómo se llame en tu contexto
+  const { showToast } = useToast();
+  const router = useRouter();
 
   const [mesas, setMesas] = useState<MesaEstadoDTO[]>([]);
   const [cargandoLista, setCargandoLista] = useState(false);
@@ -43,30 +45,48 @@ export default function MesasPage() {
     cargarMesas();
   }, []);
 
-  async function confirmarAbrirComanda(mesa: MesaEstadoDTO) {
+  async function manejarClickMesa(mesa: MesaEstadoDTO) {
     if (!usuario) {
       showToast({
         type: 'warning',
         title: 'Sesión requerida',
-        message: 'Debes iniciar sesión para abrir una comanda.',
+        message: 'Debes iniciar sesión para gestionar comandas.',
       });
       return;
     }
 
+    // 🟥 CASO 1: MESA YA OCUPADA → IR DIRECTO A LA COMANDA
     if (mesa.ocupada) {
+      // Ajusta el nombre de la propiedad según tu DTO:
+      // por ejemplo: mesa.pedidoIdActivo, mesa.pedidoId, mesa.pedidoIdActual, etc.
+      const pedidoId = (mesa as any).pedidoIdActivo ?? (mesa as any).pedidoId;
+
+      if (!pedidoId) {
+        // Si por alguna razón no tienes el id del pedido
+        showToast({
+          type: 'info',
+          title: 'Mesa ocupada',
+          message:
+            `La mesa ${mesa.numero} ya tiene una comanda activa, ` +
+            'pero no se recibió el identificador del pedido.',
+        });
+        return;
+      }
+
       showToast({
         type: 'info',
-        title: 'Mesa ocupada',
-        message: `La mesa ${mesa.numero} ya tiene una comanda activa.`,
+        title: 'Ir a comanda',
+        message: `Abriendo la comanda #${pedidoId} de la mesa ${mesa.numero}.`,
       });
+
+      router.push(`/dashboard/pedidos/${pedidoId}`);
       return;
     }
 
-    // 🧁 Si tu sistema de toast ya tiene "confirmación", úsalo aquí.
-    // Si no, mientras tanto usamos window.confirm como respaldo.
+    // 🟩 CASO 2: MESA LIBRE → CONFIRMAR Y CREAR COMANDA
     const confirmar = await new Promise<boolean>((resolve) => {
-      // Intento con toast de confirmación
       try {
+        // Si tu ToastContext soporta confirmación:
         showToast({
           type: 'confirm',
           title: 'Abrir comanda',
@@ -75,7 +95,7 @@ export default function MesasPage() {
           onCancel: () => resolve(false),
         });
       } catch {
-        // Si tu ToastContext aún no soporta "confirm", usa confirm nativo
+        // Fallback nativo
         const ok = window.confirm(
           `¿Deseas abrir una nueva comanda para la mesa ${mesa.numero}?`
         );
@@ -99,9 +119,11 @@ export default function MesasPage() {
         message: `Se abrió la comanda #${pedido.pedidoId} para la mesa ${mesa.numero}.`,
       });
 
-      // TODO: Aquí podemos redirigir a la vista de comanda:
-      // router.push(`/dashboard/pedidos/${pedido.pedidoId}`);
+      // 🔁 refrescamos estado de mesas
       await cargarMesas();
+
+      // 🚀 Navegamos a la página de la comanda
+      router.push(`/dashboard/pedidos/${pedido.pedidoId}`);
     } catch (err: any) {
       console.error(err);
       showToast({
@@ -187,7 +209,7 @@ export default function MesasPage() {
                 <button
                   key={mesa.mesaId}
                   type="button"
-                  onClick={() => confirmarAbrirComanda(mesa)}
+                  onClick={() => manejarClickMesa(mesa)}
                   disabled={estaCargando}
                   className={`
                     relative flex flex-col items-start justify-between
