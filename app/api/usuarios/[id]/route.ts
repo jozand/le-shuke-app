@@ -3,15 +3,39 @@ import { NextResponse } from 'next/server';
 import { prisma } from '@/app/lib/prisma';
 import bcrypt from 'bcryptjs';
 
-interface Params {
-  params: { id: string };
+// 👇 En Next 15, params es una Promise
+interface RouteContext {
+  params: Promise<{
+    id: string;
+  }>;
 }
 
-export async function GET(_req: Request, { params }: Params) {
+interface UsuarioUpdateBody {
+  nombre: string;
+  email: string;
+  password?: string;
+  rolId: number;
+  activo: boolean;
+}
+
+/* =========================
+   GET /api/usuarios/[id]
+   ========================= */
+export async function GET(_req: Request, { params }: RouteContext) {
   try {
-    const id = Number(params.id);
+    // 👇 Desempaquetamos la Promise de params
+    const { id } = await params;
+    const usuarioId = Number(id);
+
+    if (Number.isNaN(usuarioId)) {
+      return NextResponse.json(
+        { ok: false, mensaje: 'ID de usuario inválido' },
+        { status: 400 }
+      );
+    }
+
     const usuario = await prisma.usuario.findUnique({
-      where: { usuarioId: id },
+      where: { usuarioId },
       include: { rol: true },
     });
 
@@ -22,8 +46,8 @@ export async function GET(_req: Request, { params }: Params) {
       );
     }
 
-    const { password, ...rest } = usuario;
-    return NextResponse.json({ ok: true, data: rest });
+    const { password, ...restoUsuario } = usuario;
+    return NextResponse.json({ ok: true, data: restoUsuario });
   } catch (error) {
     console.error('Error GET /usuarios/[id]', error);
     return NextResponse.json(
@@ -33,30 +57,44 @@ export async function GET(_req: Request, { params }: Params) {
   }
 }
 
-export async function PUT(req: Request, { params }: Params) {
+/* =========================
+   PUT /api/usuarios/[id]
+   ========================= */
+export async function PUT(req: Request, { params }: RouteContext) {
   try {
-    const id = Number(params.id);
-    const { nombre, email, password, rolId, activo } = await req.json();
+    const { id } = await params;
+    const usuarioId = Number(id);
 
-    const data: any = {
-      nombre,
-      email,
-      rolId,
-      activo,
-    };
+    if (Number.isNaN(usuarioId)) {
+      return NextResponse.json(
+        { ok: false, mensaje: 'ID de usuario inválido' },
+        { status: 400 }
+      );
+    }
 
-    if (password) {
+    const body: UsuarioUpdateBody = await req.json();
+    const { nombre, email, password, rolId, activo } = body;
+
+    const data: {
+      nombre: string;
+      email: string;
+      rolId: number;
+      activo: boolean;
+      password?: string;
+    } = { nombre, email, rolId, activo };
+
+    if (password && password.trim() !== '') {
       data.password = await bcrypt.hash(password, 10);
     }
 
     const usuario = await prisma.usuario.update({
-      where: { usuarioId: id },
+      where: { usuarioId },
       data,
       include: { rol: true },
     });
 
-    const { password: _, ...rest } = usuario;
-    return NextResponse.json({ ok: true, data: rest });
+    const { password: _omit, ...restoUsuario } = usuario;
+    return NextResponse.json({ ok: true, data: restoUsuario });
   } catch (error) {
     console.error('Error PUT /usuarios/[id]', error);
     return NextResponse.json(
@@ -66,18 +104,30 @@ export async function PUT(req: Request, { params }: Params) {
   }
 }
 
-export async function DELETE(_req: Request, { params }: Params) {
+/* =========================
+   DELETE /api/usuarios/[id]
+   (baja lógica: activo = false)
+   ========================= */
+export async function DELETE(_req: Request, { params }: RouteContext) {
   try {
-    const id = Number(params.id);
+    const { id } = await params;
+    const usuarioId = Number(id);
+
+    if (Number.isNaN(usuarioId)) {
+      return NextResponse.json(
+        { ok: false, mensaje: 'ID de usuario inválido' },
+        { status: 400 }
+      );
+    }
 
     const usuario = await prisma.usuario.update({
-      where: { usuarioId: id },
+      where: { usuarioId },
       data: { activo: false },
       include: { rol: true },
     });
 
-    const { password, ...rest } = usuario;
-    return NextResponse.json({ ok: true, data: rest });
+    const { password, ...restoUsuario } = usuario;
+    return NextResponse.json({ ok: true, data: restoUsuario });
   } catch (error) {
     console.error('Error DELETE /usuarios/[id]', error);
     return NextResponse.json(

@@ -12,11 +12,9 @@ datasource db {
 }
 
 enum EstadoPedido {
-  PENDIENTE
-  PREPARACION
-  LISTO
-  ENTREGADO
-  CANCELADO
+  ABIERTA
+  CERRADA
+  CANCELADA
 }
 
 model Rol {
@@ -78,9 +76,9 @@ model Mesa {
 
 model Pedido {
   pedidoId      Int          @id @default(autoincrement())
-  mesaId        Int // 🔹 La mesa es la llave principal de la comanda
-  usuarioId     Int // mesero/cajero que abre la comanda
-  estado        EstadoPedido @default(PENDIENTE)
+  mesaId        Int
+  usuarioId     Int
+  estado        EstadoPedido @default(ABIERTA)
   total         Decimal      @db.Decimal(10, 2)
   fechaHora     DateTime     @default(now())
   observaciones String?

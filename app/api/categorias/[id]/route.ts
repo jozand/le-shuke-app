@@ -1,14 +1,35 @@
 // app/api/categorias/[id]/route.ts
-import { NextResponse } from 'next/server';
+import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/app/lib/prisma';
 
-interface Params {
-  params: { id: string };
+// 🔹 Helper para validar / convertir id
+function getIdFromString(rawId: string | undefined) {
+  if (!rawId) return null;
+
+  const id = Number(rawId);
+  if (!Number.isInteger(id) || id <= 0) {
+    return null;
+  }
+
+  return id;
 }
 
-export async function GET(_req: Request, { params }: Params) {
+// 🔹 GET /api/categorias/[id]
+export async function GET(
+  _req: NextRequest,
+  context: { params: Promise<{ id: string }> }
+) {
   try {
-    const id = Number(params.id);
+    const { id: rawId } = await context.params; // 👈 aquí el await
+    const id = getIdFromString(rawId);
+
+    if (!id) {
+      return NextResponse.json(
+        { ok: false, mensaje: 'ID de categoría inválido' },
+        { status: 400 }
+      );
+    }
+
     const categoria = await prisma.categoria.findUnique({
       where: { categoriaId: id },
     });
@@ -30,17 +51,38 @@ export async function GET(_req: Request, { params }: Params) {
   }
 }
 
-export async function PUT(req: Request, { params }: Params) {
+// 🔹 PUT /api/categorias/[id]
+export async function PUT(
+  req: NextRequest,
+  context: { params: Promise<{ id: string }> }
+) {
   try {
-    const id = Number(params.id);
-    const { nombre, descripcion, activa } = await req.json();
+    const { id: rawId } = await context.params; // 👈 aquí el await
+    const id = getIdFromString(rawId);
+
+    if (!id) {
+      return NextResponse.json(
+        { ok: false, mensaje: 'ID de categoría inválido' },
+        { status: 400 }
+      );
+    }
+
+    const body = await req.json();
+    const { nombre, descripcion, activa } = body ?? {};
+
+    if (!nombre || typeof nombre !== 'string') {
+      return NextResponse.json(
+        { ok: false, mensaje: 'El nombre de la categoría es obligatorio' },
+        { status: 400 }
+      );
+    }
 
     const categoria = await prisma.categoria.update({
       where: { categoriaId: id },
       data: {
         nombre,
-        descripcion: descripcion ?? null,
-        activa,
+        descripcion: descripcion === '' ? null : descripcion ?? null,
+        activa: typeof activa === 'boolean' ? activa : true,
       },
     });
 
@@ -54,17 +96,29 @@ export async function PUT(req: Request, { params }: Params) {
   }
 }
 
-export async function DELETE(_req: Request, { params }: Params) {
+// 🔹 DELETE /api/categorias/[id]
+export async function DELETE(
+  _req: NextRequest,
+  context: { params: Promise<{ id: string }> }
+) {
   try {
-    const id = Number(params.id);
+    const { id: rawId } = await context.params; // 👈 aquí el await
+    const id = getIdFromString(rawId);
 
-    // Si prefieres baja lógica:
+    if (!id) {
+      return NextResponse.json(
+        { ok: false, mensaje: 'ID de categoría inválido' },
+        { status: 400 }
+      );
+    }
+
+    // Baja lógica: marcar como inactiva
     const categoria = await prisma.categoria.update({
       where: { categoriaId: id },
       data: { activa: false },
     });
 
-    // O borrado físico:
+    // Borrado físico (si algún día lo quisieras):
     // const categoria = await prisma.categoria.delete({ where: { categoriaId: id } });
 
     return NextResponse.json({ ok: true, data: categoria });

@@ -1,14 +1,35 @@
 // app/api/productos/[id]/route.ts
-import { NextResponse } from 'next/server';
+import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/app/lib/prisma';
 
-interface Params {
-  params: { id: string };
+// 🔹 Helper para validar / convertir id
+function getIdFromString(rawId: string | undefined) {
+  if (!rawId) return null;
+
+  const id = Number(rawId);
+  if (!Number.isInteger(id) || id <= 0) {
+    return null;
+  }
+
+  return id;
 }
 
-export async function GET(_req: Request, { params }: Params) {
+// 🔹 GET /api/productos/[id]
+export async function GET(
+  _req: NextRequest,
+  context: { params: Promise<{ id: string }> }
+) {
   try {
-    const id = Number(params.id);
+    const { id: rawId } = await context.params; // 👈 importante el await
+    const id = getIdFromString(rawId);
+
+    if (!id) {
+      return NextResponse.json(
+        { ok: false, mensaje: 'ID de producto inválido' },
+        { status: 400 }
+      );
+    }
+
     const producto = await prisma.producto.findUnique({
       where: { productoId: id },
       include: { categoria: true },
@@ -31,19 +52,55 @@ export async function GET(_req: Request, { params }: Params) {
   }
 }
 
-export async function PUT(req: Request, { params }: Params) {
+// 🔹 PUT /api/productos/[id]
+export async function PUT(
+  req: NextRequest,
+  context: { params: Promise<{ id: string }> }
+) {
   try {
-    const id = Number(params.id);
-    const { nombre, descripcion, precio, activo, categoriaId } = await req.json();
+    const { id: rawId } = await context.params; // 👈 importante el await
+    const id = getIdFromString(rawId);
+
+    if (!id) {
+      return NextResponse.json(
+        { ok: false, mensaje: 'ID de producto inválido' },
+        { status: 400 }
+      );
+    }
+
+    const body = await req.json();
+    const { nombre, descripcion, precio, activo, categoriaId } = body ?? {};
+
+    if (!nombre || typeof nombre !== 'string') {
+      return NextResponse.json(
+        { ok: false, mensaje: 'El nombre del producto es obligatorio' },
+        { status: 400 }
+      );
+    }
+
+    if (precio === undefined || precio === null || isNaN(Number(precio))) {
+      return NextResponse.json(
+        { ok: false, mensaje: 'El precio del producto es inválido' },
+        { status: 400 }
+      );
+    }
+
+    if (!categoriaId || !Number.isInteger(Number(categoriaId))) {
+      return NextResponse.json(
+        { ok: false, mensaje: 'La categoría del producto es inválida' },
+        { status: 400 }
+      );
+    }
 
     const producto = await prisma.producto.update({
       where: { productoId: id },
       data: {
         nombre,
-        descripcion: descripcion ?? null,
-        precio,
-        activo,
-        categoriaId,
+        descripcion: descripcion === '' ? null : descripcion ?? null,
+        // Prisma Decimal admite number o string, lo normalizamos
+        precio: Number(precio),
+        activo: typeof activo === 'boolean' ? activo : true,
+        categoriaId: Number(categoriaId),
       },
     });
 
@@ -57,11 +114,23 @@ export async function PUT(req: Request, { params }: Params) {
   }
 }
 
-export async function DELETE(_req: Request, { params }: Params) {
+// 🔹 DELETE /api/productos/[id]
+export async function DELETE(
+  _req: NextRequest,
+  context: { params: Promise<{ id: string }> }
+) {
   try {
-    const id = Number(params.id);
+    const { id: rawId } = await context.params; // 👈 importante el await
+    const id = getIdFromString(rawId);
 
-    // Baja lógica
+    if (!id) {
+      return NextResponse.json(
+        { ok: false, mensaje: 'ID de producto inválido' },
+        { status: 400 }
+      );
+    }
+
+    // Baja lógica: marcar como inactivo
     const producto = await prisma.producto.update({
       where: { productoId: id },
       data: { activo: false },
