@@ -4,6 +4,10 @@
 import React, { useState } from 'react';
 import { useAuth } from '@/context/AuthContext';
 import { redirect } from 'next/navigation';
+import MesasTab from './_components/MesasTab';
+import CategoriasTab from './_components/CategoriasTab';
+import ProductosTab from './_components/ProductosTab';
+import UsuariosTab from './_components/UsuariosTab';
 
 const TABS = ['Mesas', 'Categorías', 'Productos', 'Usuarios'] as const;
 type TabKey = (typeof TABS)[number];
@@ -55,7 +59,7 @@ export default function AdministracionPage() {
         })}
       </div>
 
-      {/* Contenido de cada tab (por ahora placeholders) */}
+      {/* Contenido de cada tab */}
       <div
         className="
           rounded-[var(--radius-lg)] border
@@ -63,26 +67,10 @@ export default function AdministracionPage() {
           shadow-[var(--shadow-card)] p-4
         "
       >
-        {tab === 'Mesas' && (
-          <p className="text-sm text-[var(--text-secondary)]">
-            Aquí irá el CRUD de <strong>Mesas</strong>.
-          </p>
-        )}
-        {tab === 'Categorías' && (
-          <p className="text-sm text-[var(--text-secondary)]">
-            Aquí irá el CRUD de <strong>Categorías</strong>.
-          </p>
-        )}
-        {tab === 'Productos' && (
-          <p className="text-sm text-[var(--text-secondary)]">
-            Aquí irá el CRUD de <strong>Productos</strong>.
-          </p>
-        )}
-        {tab === 'Usuarios' && (
-          <p className="text-sm text-[var(--text-secondary)]">
-            Aquí irá el CRUD de <strong>Usuarios</strong>.
-          </p>
-        )}
+        {tab === 'Mesas' && <MesasTab />}
+        {tab === 'Categorías' && <CategoriasTab />}
+        {tab === 'Productos' && <ProductosTab />}
+        {tab === 'Usuarios' && <UsuariosTab />}
       </div>
     </section>
   );
