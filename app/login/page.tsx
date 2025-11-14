@@ -5,6 +5,7 @@ import React, { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Image from 'next/image';
 import { useAuth } from '@/context/AuthContext'; // 👈 IMPORTANTE
+import { useToast } from '@/context/ToastContext';
 
 export default function LoginPage() {
   const router = useRouter();
@@ -15,6 +16,8 @@ export default function LoginPage() {
   const [password, setPassword] = useState('123456');
   const [cargando, setCargando] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  const { showToast } = useToast();
 
   // Verificar si ya hay sesión activa
   useEffect(() => {
@@ -62,6 +65,10 @@ export default function LoginPage() {
 
       // Espera mínima para evitar glitches
       setTimeout(() => router.push('/dashboard'), 80);
+      showToast({
+        type: 'success',
+        message: 'Bienvenido a Le Shuké App.'
+      });
 
     } catch (err) {
       setError('Error de conexión con el servidor');

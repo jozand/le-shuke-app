@@ -1,0 +1,74 @@
+/* ==========================================================
+   🎨 TEMA CLARO
+   ============================================================== */
+:root {
+  /* Colores base */
+  --bg-main: #f9fafb;
+  --bg-card: rgba(255, 255, 255, 0.85);
+  --bg-header: rgba(255, 255, 255, 0.6);
+
+  /* Bordes */
+  --border-color: rgba(0, 0, 0, 0.12);
+
+  /* Textos */
+  --text-main: #111827;
+  --text-secondary: #4b5563;
+
+  /* Acentos */
+  --accent-primary: #2563eb;
+  /* azul */
+  --accent-secondary: #10b981;
+  /* verde */
+
+  /* Botones */
+  --btn-primary-bg: #2563eb;
+  --btn-primary-text: #ffffff;
+
+  --btn-secondary-bg: #e5e7eb;
+  --btn-secondary-text: #1f2937;
+
+  /* Sombras */
+  --shadow-card: 0 2px 8px rgba(0, 0, 0, 0.08);
+
+  /* Radio global */
+  --radius-md: 0.75rem;
+  --radius-lg: 1.25rem;
+}
+
+
+/* ==========================================================
+   🌙 TEMA OSCURO
+   ============================================================== */
+[data-theme='dark'] {
+  /* Colores base */
+  --bg-main: #0f172a;
+  --bg-card: rgba(255, 255, 255, 0.08);
+  --bg-header: rgba(15, 23, 42, 0.65);
+
+  /* Bordes */
+  --border-color: rgba(255, 255, 255, 0.1);
+
+  /* Textos */
+  --text-main: #f8fafc;
+  --text-secondary: #94a3b8;
+
+  /* Acentos */
+  --accent-primary: #3b82f6;
+  /* azul claro */
+  --accent-secondary: #34d399;
+  /* verde claro */
+
+  /* Botones */
+  --btn-primary-bg: #3b82f6;
+  --btn-primary-text: #ffffff;
+
+  --btn-secondary-bg: rgba(255, 255, 255, 0.1);
+  --btn-secondary-text: #e5e7eb;
+
+  /* Sombras */
+  --shadow-card: 0 4px 14px rgba(0, 0, 0, 0.4);
+
+  /* Radio global */
+  --radius-md: 0.75rem;
+  --radius-lg: 1.25rem;
+}
