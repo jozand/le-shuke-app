@@ -7,7 +7,7 @@ import { ToastProvider } from '@/context/ToastContext';
 import { UIProvider } from '@/context/UIContext';
 
 export const metadata: Metadata = {
-  title: 'Le Shulé App',
+  title: 'Le Shuké App',
   description: 'Sistema de control de comandas',
 };
 

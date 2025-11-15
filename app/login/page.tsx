@@ -102,7 +102,7 @@ export default function LoginPage() {
 
         {/* Encabezado */}
         <h1 className="text-3xl font-bold text-center text-white mb-2 tracking-tight">
-          Le Shulé App
+          Le Shuké App
         </h1>
         <p className="text-center text-slate-200 mb-8 text-sm">
           Sistema de control de comandas
