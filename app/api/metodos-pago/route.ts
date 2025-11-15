@@ -5,13 +5,15 @@ import { prisma } from '@/app/lib/prisma';
 export async function GET() {
   try {
     const metodos = await prisma.metodoPago.findMany({
-      orderBy: { nombre: 'asc' },
+      where: { activo: true },
+      orderBy: { metodoPagoId: 'asc' },
     });
-    return NextResponse.json({ ok: true, data: metodos });
+
+    return NextResponse.json({ data: metodos });
   } catch (error) {
-    console.error('Error GET /metodos-pago', error);
+    console.error('Error al obtener métodos de pago:', error);
     return NextResponse.json(
-      { ok: false, mensaje: 'Error al obtener métodos de pago' },
+      { mensaje: 'Error al obtener métodos de pago.' },
       { status: 500 }
     );
   }

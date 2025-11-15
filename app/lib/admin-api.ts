@@ -464,9 +464,9 @@ export async function finalizarPedido(
     body: JSON.stringify({ metodoPagoId }),
   });
 
-  // Usamos tu helper genérico
   await handleResponse<unknown>(res);
 }
+
 
 export interface DashboardKPIs {
   totalPedidos: number;
@@ -550,4 +550,20 @@ export async function obtenerDashboard(
 
   const json = await res.json();
   return json.data as DashboardResponse;
+}
+
+export interface MetodoPagoDTO {
+  metodoPagoId: number;
+  nombre: string;
+  descripcion: string | null;
+  activo: boolean;
+}
+
+// ...
+
+export async function obtenerMetodosPago(): Promise<MetodoPagoDTO[]> {
+  const res = await fetch('/api/metodos-pago', {
+    method: 'GET',
+  });
+  return handleResponse<MetodoPagoDTO[]>(res);
 }

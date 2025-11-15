@@ -1,6 +1,8 @@
+// app/api/auth/login/route.ts  (ajusta la ruta si la tienes en otro lado)
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/app/lib/prisma';
 import { firmarToken } from '@/app/lib/auth';
+import bcrypt from 'bcryptjs';
 
 export async function POST(request: NextRequest) {
   try {
@@ -25,7 +27,10 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    if (usuario.password !== password) {
+    // 🔐 Comparar la contraseña enviada con el hash almacenado
+    const passwordValida = await bcrypt.compare(password, usuario.password);
+
+    if (!passwordValida) {
       return NextResponse.json(
         { ok: false, mensaje: 'Usuario o contraseña incorrectos' },
         { status: 401 }
@@ -54,7 +59,7 @@ export async function POST(request: NextRequest) {
 
     resp.cookies.set('auth_token', token, {
       httpOnly: true,
-      secure: false, // ⚠️ EN LOCALHOST debe ser false
+      secure: false, // ⚠️ en localhost false; en producción ponlo en true
       sameSite: 'lax',
       path: '/',
       maxAge: 60 * 60 * 4, // 4 horas

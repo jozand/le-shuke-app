@@ -1,4 +1,3 @@
-// app/dashboard/pedidos/[pedidoId]/page.tsx (ajusta la ruta según la tuya)
 'use client';
 
 import React, { useEffect, useMemo, useState } from 'react';
@@ -10,8 +9,10 @@ import {
   actualizarCantidadDetalle,
   eliminarDetallePedido,
   finalizarPedido,
+  obtenerMetodosPago,
   type CategoriaConProductosDTO,
   type PedidoDetalleDTO,
+  type MetodoPagoDTO,
 } from '@/app/lib/admin-api';
 import { useToast } from '@/context/ToastContext';
 import {
@@ -38,15 +39,12 @@ export default function PedidoPage() {
   const [finalizando, setFinalizando] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  // Cantidades locales por productoId para el catálogo
-  const [cantidadesCatalogo, setCantidadesCatalogo] = useState<
-    Record<number, number>
-  >({});
+  const [cantidadesCatalogo, setCantidadesCatalogo] = useState<Record<number, number>>({});
+  const [categoriaActivaId, setCategoriaActivaId] = useState<number | null>(null);
 
-  // Categoría activa para los tabs
-  const [categoriaActivaId, setCategoriaActivaId] = useState<number | null>(
-    null
-  );
+  const [metodosPago, setMetodosPago] = useState<MetodoPagoDTO[]>([]);
+  const [metodoPagoSeleccionadoId, setMetodoPagoSeleccionadoId] = useState<number | null>(null);
+  const [cargandoMetodosPago, setCargandoMetodosPago] = useState(false);
 
   const total = useMemo(
     () =>
@@ -66,7 +64,7 @@ export default function PedidoPage() {
       const actual = prev[productoId] ?? 1;
       const nueva = actual + delta;
       if (nueva < 1) return { ...prev, [productoId]: 1 };
-      if (nueva > 99) return { ...prev, [productoId]: 99 }; // por si acaso
+      if (nueva > 99) return { ...prev, [productoId]: 99 };
       return { ...prev, [productoId]: nueva };
     });
   }
@@ -88,7 +86,6 @@ export default function PedidoPage() {
       const data = await obtenerCatalogoConProductos();
       setCatalogo(data);
     } catch (err: any) {
-      console.error(err);
       setError(err.message || 'Error al cargar catálogo de productos');
       showToast({
         type: 'error',
@@ -106,7 +103,6 @@ export default function PedidoPage() {
       const data = await obtenerPedidoDetalle(pedidoId);
       setDetalles(data);
     } catch (err: any) {
-      console.error(err);
       setError(err.message || 'Error al cargar la comanda');
       showToast({
         type: 'error',
@@ -118,25 +114,40 @@ export default function PedidoPage() {
     }
   }
 
+  async function cargarMetodosPago() {
+    try {
+      setCargandoMetodosPago(true);
+      const data = await obtenerMetodosPago();
+      setMetodosPago(data);
+      if (data.length === 1) {
+        setMetodoPagoSeleccionadoId(data[0].metodoPagoId);
+      }
+    } catch (err: any) {
+      showToast({
+        type: 'error',
+        title: 'Error',
+        message: err.message || 'Error al cargar métodos de pago.',
+      });
+    } finally {
+      setCargandoMetodosPago(false);
+    }
+  }
+
   useEffect(() => {
     if (!pedidoId || Number.isNaN(pedidoId)) return;
     setError(null);
     cargarCatalogo();
     cargarDetalles();
+    cargarMetodosPago();
   }, [pedidoId]);
 
-  // Cuando se cargue el catálogo, seleccionamos la primera categoría como activa
   useEffect(() => {
     if (catalogo.length > 0 && categoriaActivaId === null) {
       setCategoriaActivaId(catalogo[0].categoriaId);
     }
   }, [catalogo, categoriaActivaId]);
 
-  async function handleAgregarProducto(
-    productoId: number,
-    nombreProducto: string,
-    cantidad: number
-  ) {
+  async function handleAgregarProducto(productoId: number, nombreProducto: string, cantidad: number) {
     if (!pedidoId) return;
 
     if (!Number.isFinite(cantidad) || cantidad <= 0) {
@@ -159,7 +170,6 @@ export default function PedidoPage() {
         message: `Se agregaron ${cantidad} unidad(es) de "${nombreProducto}" a la comanda.`,
       });
     } catch (err: any) {
-      console.error(err);
       showToast({
         type: 'error',
         title: 'Error',
@@ -170,27 +180,16 @@ export default function PedidoPage() {
     }
   }
 
-  async function handleCambiarCantidad(
-    detalle: PedidoDetalleDTO,
-    nuevaCantidad: number
-  ) {
+  async function handleCambiarCantidad(detalle: PedidoDetalleDTO, nuevaCantidad: number) {
     if (nuevaCantidad <= 0) {
-      // Usamos el mismo esquema de confirm toast que para eliminar
       const confirmarEliminar = await new Promise<boolean>((resolve) => {
-        try {
-          showToast({
-            type: 'confirm',
-            title: 'Eliminar producto',
-            message: `La cantidad es 0. ¿Deseas eliminar "${detalle.nombreProducto}" de la comanda?`,
-            onConfirm: () => resolve(true),
-            onCancel: () => resolve(false),
-          });
-        } catch {
-          const ok = window.confirm(
-            `La cantidad es 0. ¿Deseas eliminar "${detalle.nombreProducto}" de la comanda?`
-          );
-          resolve(ok);
-        }
+        showToast({
+          type: 'confirm',
+          title: 'Eliminar producto',
+          message: `La cantidad es 0. ¿Deseas eliminar "${detalle.nombreProducto}" de la comanda?`,
+          onConfirm: () => resolve(true),
+          onCancel: () => resolve(false),
+        });
       });
 
       if (!confirmarEliminar) return;
@@ -211,7 +210,6 @@ export default function PedidoPage() {
         message: `Se actualizó la cantidad de "${detalle.nombreProducto}".`,
       });
     } catch (err: any) {
-      console.error(err);
       showToast({
         type: 'error',
         title: 'Error',
@@ -223,23 +221,14 @@ export default function PedidoPage() {
   }
 
   async function handleEliminarDetalle(detalle: PedidoDetalleDTO) {
-    // Mostrar diálogo de confirmación usando toast
     const confirmar = await new Promise<boolean>((resolve) => {
-      try {
-        showToast({
-          type: 'confirm',
-          title: 'Eliminar producto',
-          message: `¿Deseas eliminar "${detalle.nombreProducto}" de la comanda?`,
-          onConfirm: () => resolve(true),
-          onCancel: () => resolve(false),
-        });
-      } catch {
-        // Fallback por si falla el toast
-        const ok = window.confirm(
-          `¿Deseas eliminar "${detalle.nombreProducto}" de la comanda?`
-        );
-        resolve(ok);
-      }
+      showToast({
+        type: 'confirm',
+        title: 'Eliminar producto',
+        message: `¿Deseas eliminar "${detalle.nombreProducto}" de la comanda?`,
+        onConfirm: () => resolve(true),
+        onCancel: () => resolve(false),
+      });
     });
 
     if (!confirmar) return;
@@ -255,7 +244,6 @@ export default function PedidoPage() {
         message: `"${detalle.nombreProducto}" fue eliminado de la comanda.`,
       });
     } catch (err: any) {
-      console.error(err);
       showToast({
         type: 'error',
         title: 'Error',
@@ -266,9 +254,9 @@ export default function PedidoPage() {
     }
   }
 
-  // 👇 AQUÍ CAMBIA: preguntamos método de pago y luego confirmamos
   async function handleFinalizarPedido() {
     if (!pedidoId) return;
+
     if (detalles.length === 0) {
       showToast({
         type: 'warning',
@@ -278,90 +266,35 @@ export default function PedidoPage() {
       return;
     }
 
-    // 1) Seleccionar método de pago (simple con prompt de momento)
-    let metodoPagoId: number | null = null;
-    let descripcionMetodo = '';
-
-    try {
-      const input =
-        typeof window !== 'undefined'
-          ? window.prompt(
-            'Selecciona el método de pago:\n' +
-            '1) Efectivo\n' +
-            '2) Tarjeta\n' +
-            '3) Transferencia',
-            '1'
-          )
-          : null;
-
-      if (!input) {
-        showToast({
-          type: 'warning',
-          title: 'Método de pago',
-          message: 'Debes seleccionar un método de pago para continuar.',
-        });
-        return;
-      }
-
-      const opcion = Number(input);
-
-      switch (opcion) {
-        case 1:
-          metodoPagoId = 1;
-          descripcionMetodo = 'Efectivo';
-          break;
-        case 2:
-          metodoPagoId = 2;
-          descripcionMetodo = 'Tarjeta';
-          break;
-        case 3:
-          metodoPagoId = 3;
-          descripcionMetodo = 'Transferencia';
-          break;
-        default:
-          showToast({
-            type: 'warning',
-            title: 'Método inválido',
-            message:
-              'Opción de método de pago no válida. Usa 1 (Efectivo), 2 (Tarjeta) o 3 (Transferencia).',
-          });
-          return;
-      }
-    } catch {
-      // Si algo sale mal con prompt, abortamos
+    if (!metodoPagoSeleccionadoId) {
       showToast({
-        type: 'error',
-        title: 'Error',
-        message: 'No se pudo seleccionar el método de pago.',
+        type: 'warning',
+        title: 'Método de pago',
+        message: 'Selecciona un método de pago antes de finalizar.',
       });
       return;
     }
 
-    if (!metodoPagoId) return;
+    const metodoSeleccionado = metodosPago.find(
+      (m) => m.metodoPagoId === metodoPagoSeleccionadoId
+    );
+    const descripcionMetodo = metodoSeleccionado?.nombre ?? 'Método de pago';
 
-    // 2) Confirmar finalización con ese método de pago
     const confirmar = await new Promise<boolean>((resolve) => {
-      const msg = `¿Deseas finalizar esta comanda con método de pago: ${descripcionMetodo}? Ya no podrás agregar más productos.`;
-
-      try {
-        showToast({
-          type: 'confirm',
-          title: 'Finalizar pedido',
-          message: msg,
-          onConfirm: () => resolve(true),
-          onCancel: () => resolve(false),
-        });
-      } catch {
-        const ok = window.confirm(msg);
-        resolve(ok);
-      }
+      showToast({
+        type: 'confirm',
+        title: 'Finalizar pedido',
+        message: `¿Deseas finalizar esta comanda con método de pago: ${descripcionMetodo}? Ya no podrás agregar más productos.`,
+        onConfirm: () => resolve(true),
+        onCancel: () => resolve(false),
+      });
     });
 
     if (!confirmar) return;
 
     try {
       setFinalizando(true);
-      await finalizarPedido(pedidoId, metodoPagoId);
+      await finalizarPedido(pedidoId, metodoPagoSeleccionadoId);
 
       showToast({
         type: 'success',
@@ -371,7 +304,6 @@ export default function PedidoPage() {
 
       router.push('/dashboard/mesas');
     } catch (err: any) {
-      console.error(err);
       showToast({
         type: 'error',
         title: 'Error',
@@ -387,7 +319,6 @@ export default function PedidoPage() {
     cargandoDetalles ||
     (!catalogo.length && !detalles.length);
 
-  // Obtenemos la categoría activa (para mostrar solo esa en el catálogo)
   const categoriaActiva = categoriaActivaId
     ? catalogo.find((c) => c.categoriaId === categoriaActivaId) ?? null
     : null;
@@ -426,11 +357,17 @@ export default function PedidoPage() {
         <button
           type="button"
           onClick={handleFinalizarPedido}
-          disabled={finalizando || procesandoAccion || detalles.length === 0}
+          disabled={
+            finalizando ||
+            procesandoAccion ||
+            detalles.length === 0 ||
+            !metodoPagoSeleccionadoId
+          }
           className="
             inline-flex items-center gap-2 rounded-[var(--radius-md)]
             bg-emerald-500 px-4 py-2 text-sm font-medium text-white
-            hover:bg-emerald-600 disabled:opacity-60 disabled:cursor-not-allowed
+            hover:bg-emerald-600
+            disabled:opacity-60 disabled:cursor-not-allowed
             active:scale-[0.98] transition
           "
         >
@@ -444,7 +381,7 @@ export default function PedidoPage() {
 
       {error && <p className="text-sm text-red-400">{error}</p>}
 
-      {/* CONTENIDO PRINCIPAL: IZQUIERDA CATÁLOGO / DERECHA COMANDA */}
+      {/* CONTENIDO PRINCIPAL */}
       <div className="grid gap-4 lg:grid-cols-[minmax(0,1.5fr)_minmax(0,1fr)]">
         {/* CATÁLOGO */}
         <div
@@ -472,7 +409,7 @@ export default function PedidoPage() {
             </p>
           ) : (
             <>
-              {/* TABS DE CATEGORÍAS */}
+              {/* TABS */}
               <div className="mb-3 border-b border-[var(--border-color)]">
                 <div className="flex gap-2 overflow-x-auto pb-1">
                   {catalogo.map((cat) => {
@@ -500,12 +437,13 @@ export default function PedidoPage() {
                 </div>
               </div>
 
-              {/* LISTADO DE PRODUCTOS DE LA CATEGORÍA ACTIVA */}
+              {/* PRODUCTOS */}
               <div className="max-h-[70vh] overflow-y-auto pr-1">
                 {categoriaActiva && categoriaActiva.productos.length > 0 ? (
                   <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-3">
                     {categoriaActiva.productos.map((prod) => {
                       const cantidad = getCantidadCatalogo(prod.productoId);
+
                       return (
                         <div
                           key={prod.productoId}
@@ -518,6 +456,7 @@ export default function PedidoPage() {
                             gap-2
                           "
                         >
+                          {/* Nombre y precio */}
                           <div className="flex w-full items-start justify-between gap-2">
                             <div>
                               <p className="text-sm font-semibold text-[var(--text-main)]">
@@ -529,28 +468,27 @@ export default function PedidoPage() {
                                 </p>
                               )}
                             </div>
+
                             <span className="text-xs font-bold text-[var(--text-main)] whitespace-nowrap rounded-full border border-[var(--border-color)] px-2 py-1">
                               Q {prod.precio.toFixed(2)}
                             </span>
                           </div>
 
-                          {/* Selector de cantidad + botón Agregar (touch friendly) */}
-                          <div className="mt-1 flex items-center justify-between gap-3">
+                          {/* Cantidad + Agregar CORREGIDO */}
+                          <div className="mt-1 flex flex-col gap-3">
+
+                            {/* Selector cantidad */}
                             <div
                               className="
                                 inline-flex items-center
                                 rounded-full border border-[var(--border-color)]
                                 bg-[var(--bg-card)] px-2 py-1
+                                w-full sm:w-auto
                               "
                             >
                               <button
                                 type="button"
-                                onClick={() =>
-                                  cambiarCantidadCatalogo(
-                                    prod.productoId,
-                                    -1
-                                  )
-                                }
+                                onClick={() => cambiarCantidadCatalogo(prod.productoId, -1)}
                                 disabled={procesandoAccion}
                                 className="
                                   p-1 rounded-full
@@ -560,6 +498,7 @@ export default function PedidoPage() {
                               >
                                 <Minus className="h-4 w-4" />
                               </button>
+
                               <input
                                 type="number"
                                 min={1}
@@ -571,20 +510,13 @@ export default function PedidoPage() {
                                 "
                                 value={cantidad}
                                 onChange={(e) =>
-                                  setCantidadCatalogoDirecto(
-                                    prod.productoId,
-                                    Number(e.target.value)
-                                  )
+                                  setCantidadCatalogoDirecto(prod.productoId, Number(e.target.value))
                                 }
                               />
+
                               <button
                                 type="button"
-                                onClick={() =>
-                                  cambiarCantidadCatalogo(
-                                    prod.productoId,
-                                    1
-                                  )
-                                }
+                                onClick={() => cambiarCantidadCatalogo(prod.productoId, 1)}
                                 disabled={procesandoAccion}
                                 className="
                                   p-1 rounded-full
@@ -596,15 +528,12 @@ export default function PedidoPage() {
                               </button>
                             </div>
 
+                            {/* Botón Agregar - FULL WIDTH en móvil */}
                             <button
                               type="button"
                               disabled={procesandoAccion}
                               onClick={() =>
-                                handleAgregarProducto(
-                                  prod.productoId,
-                                  prod.nombre,
-                                  cantidad
-                                )
+                                handleAgregarProducto(prod.productoId, prod.nombre, cantidad)
                               }
                               className="
                                 inline-flex items-center justify-center
@@ -613,11 +542,13 @@ export default function PedidoPage() {
                                 hover:bg-emerald-600
                                 disabled:opacity-60 disabled:cursor-not-allowed
                                 active:scale-[0.97] transition
+                                w-full sm:w-auto sm:self-end
                               "
                             >
                               <Plus className="h-4 w-4 mr-1" />
                               <span>Agregar</span>
                             </button>
+
                           </div>
                         </div>
                       );
@@ -633,7 +564,7 @@ export default function PedidoPage() {
           )}
         </div>
 
-        {/* COMANDA ACTUAL */}
+        {/* COMANDA */}
         <div
           className="
             rounded-[var(--radius-lg)] border
@@ -653,7 +584,7 @@ export default function PedidoPage() {
             )}
           </div>
 
-          {detalles.length === 0 && !cargandoDetalles ? (
+          {detalles.length === 0 ? (
             <p className="text-sm text-[var(--text-secondary)]">
               Aún no has agregado productos a esta comanda.
             </p>
@@ -682,20 +613,16 @@ export default function PedidoPage() {
                   </thead>
                   <tbody>
                     {detalles.map((d) => (
-                      <tr
-                        key={d.pedidoDetalleId}
-                        className="border-t border-[var(--border-color)]"
-                      >
+                      <tr key={d.pedidoDetalleId} className="border-t border-[var(--border-color)]">
                         <td className="px-2 py-2 align-top">
-                          <p className="font-medium text-[var(--text-main)]">
-                            {d.nombreProducto}
-                          </p>
+                          <p className="font-medium text-[var(--text-main)]">{d.nombreProducto}</p>
                           {d.categoriaNombre && (
                             <p className="text-[11px] text-[var(--text-muted)]">
                               {d.categoriaNombre}
                             </p>
                           )}
                         </td>
+
                         <td className="px-2 py-2 align-middle text-center">
                           <input
                             type="number"
@@ -709,24 +636,20 @@ export default function PedidoPage() {
                             "
                             value={d.cantidad}
                             onChange={(e) =>
-                              handleCambiarCantidad(
-                                d,
-                                Number(e.target.value)
-                              )
+                              handleCambiarCantidad(d, Number(e.target.value))
                             }
                             disabled={procesandoAccion}
                           />
                         </td>
+
                         <td className="px-2 py-2 align-middle text-right">
                           Q {d.precioUnitario.toFixed(2)}
                         </td>
+
                         <td className="px-2 py-2 align-middle text-right">
-                          Q{' '}
-                          {(
-                            d.subtotal ??
-                            d.cantidad * d.precioUnitario
-                          ).toFixed(2)}
+                          Q {(d.subtotal ?? d.cantidad * d.precioUnitario).toFixed(2)}
                         </td>
+
                         <td className="px-2 py-2 align-middle text-center">
                           <button
                             type="button"
@@ -748,11 +671,65 @@ export default function PedidoPage() {
                 </table>
               </div>
 
-              {/* TOTAL */}
+              {/* Método de pago */}
+              <div className="space-y-2">
+                <div className="flex items-center justify-between">
+                  <span className="text-sm font-medium text-[var(--text-secondary)]">
+                    Método de pago
+                  </span>
+
+                  {cargandoMetodosPago && (
+                    <span className="inline-flex items-center gap-1 text-[10px] text-[var(--text-muted)]">
+                      <Loader2 className="h-3 w-3 animate-spin" />
+                      <span>Cargando...</span>
+                    </span>
+                  )}
+                </div>
+
+                {metodosPago.length === 0 ? (
+                  <p className="text-xs text-[var(--text-muted)]">
+                    No hay métodos de pago configurados.
+                  </p>
+                ) : (
+                  <div className="flex flex-wrap gap-2">
+                    {metodosPago.map((m) => (
+                      <label
+                        key={m.metodoPagoId}
+                        className={`
+                          inline-flex items-center gap-2 rounded-full border px-3 py-1.5 text-xs
+                          ${metodoPagoSeleccionadoId === m.metodoPagoId
+                            ? 'border-emerald-500 bg-emerald-500/10 text-emerald-300'
+                            : 'border-[var(--border-color)] bg-[var(--bg-elevated)] text-[var(--text-secondary)] hover:bg-[var(--bg-hover)]'
+                          }
+                          transition cursor-pointer
+                        `}
+                      >
+                        <input
+                          type="radio"
+                          name="metodoPago"
+                          value={m.metodoPagoId}
+                          className="h-3 w-3"
+                          checked={metodoPagoSeleccionadoId === m.metodoPagoId}
+                          onChange={() => setMetodoPagoSeleccionadoId(m.metodoPagoId)}
+                        />
+                        <span className="font-medium">{m.nombre}</span>
+                        {m.descripcion && (
+                          <span className="text-[10px] text-[var(--text-muted)]">
+                            {m.descripcion}
+                          </span>
+                        )}
+                      </label>
+                    ))}
+                  </div>
+                )}
+              </div>
+
+              {/* Total */}
               <div className="flex items-center justify-between">
                 <span className="text-sm font-medium text-[var(--text-secondary)]">
                   Total
                 </span>
+
                 <span className="text-xl font-semibold text-[var(--text-main)]">
                   Q {total.toFixed(2)}
                 </span>

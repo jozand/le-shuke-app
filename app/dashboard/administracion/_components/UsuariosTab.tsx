@@ -12,6 +12,13 @@ import {
 import { Loader2, Pencil, Trash2, Check, X } from 'lucide-react';
 import { useToast } from '@/context/ToastContext';
 
+type RolDTO = {
+  rolId: number;
+  nombre: string;
+  descripcion?: string | null;
+  estado: boolean;
+};
+
 export default function UsuariosTab() {
   const [usuarios, setUsuarios] = useState<UsuarioDTO[]>([]);
   const [cargando, setCargando] = useState(false);
@@ -27,11 +34,14 @@ export default function UsuariosTab() {
     activo: true,
   });
 
+  const [roles, setRoles] = useState<RolDTO[]>([]);
+  const [cargandoRoles, setCargandoRoles] = useState(false);
+
   const { showToast } = useToast();
 
   // Cargar usuarios
   useEffect(() => {
-    const cargar = async () => {
+    const cargarUsuarios = async () => {
       try {
         setCargando(true);
         setError(null);
@@ -48,7 +58,34 @@ export default function UsuariosTab() {
         setCargando(false);
       }
     };
-    cargar();
+
+    cargarUsuarios();
+  }, [showToast]);
+
+  // Cargar roles desde /api/roles
+  useEffect(() => {
+    const cargarRoles = async () => {
+      try {
+        setCargandoRoles(true);
+        const res = await fetch('/api/roles');
+        if (!res.ok) {
+          throw new Error('No se pudieron cargar los roles');
+        }
+        const json = await res.json();
+        const data = (json.data || []) as RolDTO[];
+        setRoles(data);
+      } catch (err: any) {
+        const mensaje = err?.message || 'Error al cargar roles';
+        showToast({
+          type: 'error',
+          message: mensaje,
+        });
+      } finally {
+        setCargandoRoles(false);
+      }
+    };
+
+    cargarRoles();
   }, [showToast]);
 
   const limpiarForm = () => {
@@ -271,19 +308,32 @@ export default function UsuariosTab() {
 
         <div>
           <label className="block text-xs font-medium text-[var(--text-secondary)] mb-1">
-            Rol ID *
+            Rol *
           </label>
-          <input
-            type="number"
+          <select
             name="rolId"
             value={form.rolId}
             onChange={onChange}
+            disabled={cargandoRoles || roles.length === 0}
             className="
               w-full rounded-[var(--radius-md)] border
               border-[var(--border-color)] bg-[var(--bg-main)]
               px-3 py-2 text-sm text-[var(--text-main)]
             "
-          />
+          >
+            <option value="">
+              {cargandoRoles
+                ? 'Cargando roles...'
+                : roles.length === 0
+                  ? 'No hay roles configurados'
+                  : 'Seleccione un rol'}
+            </option>
+            {roles.map((rol) => (
+              <option key={rol.rolId} value={String(rol.rolId)}>
+                {rol.nombre}
+              </option>
+            ))}
+          </select>
         </div>
 
         <div className="flex items-center gap-2 md:flex-col md:items-stretch">
@@ -393,53 +443,59 @@ export default function UsuariosTab() {
               </tr>
             )}
 
-            {usuarios.map((usr) => (
-              <tr
-                key={usr.usuarioId}
-                className="border-t border-[var(--border-color)] text-[var(--text-main)]"
-              >
-                <td className="px-3 py-2">{usr.nombre}</td>
-                <td className="px-3 py-2">{usr.email}</td>
-                <td className="px-3 py-2 text-center">{usr.rolId}</td>
-                <td className="px-3 py-2 text-center">
-                  {usr.activo ? (
-                    <span className="inline-flex items-center gap-1 rounded-full bg-emerald-500/10 px-2 py-0.5 text-[10px] font-semibold text-emerald-300">
-                      <Check className="h-3 w-3" />
-                      Activo
-                    </span>
-                  ) : (
-                    <span className="inline-flex items-center gap-1 rounded-full bg-zinc-500/10 px-2 py-0.5 text-[10px] font-semibold text-zinc-300">
-                      Inactivo
-                    </span>
-                  )}
-                </td>
-                <td className="px-3 py-2 text-right">
-                  <div className="inline-flex items-center gap-2">
-                    <button
-                      onClick={() => onEditar(usr)}
-                      className="
-                        inline-flex items-center rounded-full bg-[var(--bg-main)]
-                        p-1.5 text-[var(--text-secondary)]
-                        hover:bg-[var(--accent-primary)] hover:text-white
-                      "
-                      title="Editar usuario"
-                    >
-                      <Pencil className="h-3 w-3" />
-                    </button>
-                    <button
-                      onClick={() => onEliminar(usr)}
-                      className="
-                        inline-flex items-center rounded-full bg-[var(--bg-main)]
-                        p-1.5 text-red-300 hover:bg-red-500 hover:text-white
-                      "
-                      title="Desactivar usuario"
-                    >
-                      <Trash2 className="h-3 w-3" />
-                    </button>
-                  </div>
-                </td>
-              </tr>
-            ))}
+            {usuarios.map((usr) => {
+              const rol = roles.find((r) => r.rolId === usr.rolId);
+
+              return (
+                <tr
+                  key={usr.usuarioId}
+                  className="border-t border-[var(--border-color)] text-[var(--text-main)]"
+                >
+                  <td className="px-3 py-2">{usr.nombre}</td>
+                  <td className="px-3 py-2">{usr.email}</td>
+                  <td className="px-3 py-2 text-center">
+                    {rol ? rol.nombre : `Rol #${usr.rolId}`}
+                  </td>
+                  <td className="px-3 py-2 text-center">
+                    {usr.activo ? (
+                      <span className="inline-flex items-center gap-1 rounded-full bg-emerald-500/10 px-2 py-0.5 text-[10px] font-semibold text-emerald-300">
+                        <Check className="h-3 w-3" />
+                        Activo
+                      </span>
+                    ) : (
+                      <span className="inline-flex items-center gap-1 rounded-full bg-zinc-500/10 px-2 py-0.5 text-[10px] font-semibold text-zinc-300">
+                        Inactivo
+                      </span>
+                    )}
+                  </td>
+                  <td className="px-3 py-2 text-right">
+                    <div className="inline-flex items-center gap-2">
+                      <button
+                        onClick={() => onEditar(usr)}
+                        className="
+                          inline-flex items-center rounded-full bg-[var(--bg-main)]
+                          p-1.5 text-[var(--text-secondary)]
+                          hover:bg-[var(--accent-primary)] hover:text-white
+                        "
+                        title="Editar usuario"
+                      >
+                        <Pencil className="h-3 w-3" />
+                      </button>
+                      <button
+                        onClick={() => onEliminar(usr)}
+                        className="
+                          inline-flex items-center rounded-full bg-[var(--bg-main)]
+                          p-1.5 text-red-300 hover:bg-red-500 hover:text-white
+                        "
+                        title="Desactivar usuario"
+                      >
+                        <Trash2 className="h-3 w-3" />
+                      </button>
+                    </div>
+                  </td>
+                </tr>
+              );
+            })}
 
             {cargando && (
               <tr>

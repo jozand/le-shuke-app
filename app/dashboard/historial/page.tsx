@@ -42,6 +42,7 @@ type MesaOption = {
 
 export default function HistorialPage() {
   const { usuario } = useAuth();
+  const esAdmin = usuario?.rol === 'Administrador';
 
   const [comandas, setComandas] = useState<HistorialComandaDTO[]>([]);
   const [cargando, setCargando] = useState(false);
@@ -199,6 +200,16 @@ export default function HistorialPage() {
 
   const comandasFiltradas = useMemo(() => {
     return comandas.filter((c) => {
+      // 🔹 Si NO es admin, solo mostrar comandas del usuario logueado
+      if (!esAdmin && usuario?.nombre) {
+        const nombreUsuario = usuario.nombre.toLowerCase().trim();
+        const nombreComanda = (c.usuarioNombre || '').toLowerCase().trim();
+        if (nombreComanda !== nombreUsuario) {
+          return false;
+        }
+      }
+
+      // Filtros de fecha
       if (fechaDesde && new Date(c.fecha) < new Date(fechaDesde)) return false;
       if (
         fechaHasta &&
@@ -206,13 +217,15 @@ export default function HistorialPage() {
       )
         return false;
 
+      // Filtro de mesa
       if (filtroMesa) {
         const mesaStr = String(c.mesaNumero ?? '');
         // Como ahora es selector, hacemos comparación exacta
         if (mesaStr !== filtroMesa) return false;
       }
 
-      if (filtroUsuario && usuario?.rol === 'Administrador') {
+      // Filtro de usuario SOLO visible/usable para admin
+      if (filtroUsuario && esAdmin) {
         if (
           !c.usuarioNombre
             .toLowerCase()
@@ -224,7 +237,15 @@ export default function HistorialPage() {
 
       return true;
     });
-  }, [comandas, fechaDesde, fechaHasta, filtroMesa, filtroUsuario, usuario?.rol]);
+  }, [
+    comandas,
+    fechaDesde,
+    fechaHasta,
+    filtroMesa,
+    filtroUsuario,
+    esAdmin,
+    usuario?.nombre,
+  ]);
 
   // 🔹 Generar PDF de la comanda en el cliente y abrirlo con window.open
   async function imprimirComanda(comanda: HistorialComandaDTO) {
@@ -499,7 +520,7 @@ export default function HistorialPage() {
             </div>
           </div>
 
-          {usuario?.rol === 'Administrador' && (
+          {esAdmin && (
             <div className="space-y-1">
               <label className="text-xs font-medium text-[var(--text-secondary)]">
                 Usuario que atendió
