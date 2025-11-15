@@ -24,7 +24,7 @@ export default function AppSidebar() {
 
   const items = [
     {
-      label: 'Inicio',
+      label: 'Dashboard',
       href: '/dashboard',
       icon: <LayoutDashboard size={20} />,
     },

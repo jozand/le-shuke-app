@@ -13,7 +13,14 @@ import {
   type PedidoDetalleDTO,
 } from '@/app/lib/admin-api';
 import { useToast } from '@/context/ToastContext';
-import { Loader2, Plus, Trash2, ArrowLeft, CheckCircle2 } from 'lucide-react';
+import {
+  Loader2,
+  Plus,
+  Minus,
+  Trash2,
+  ArrowLeft,
+  CheckCircle2,
+} from 'lucide-react';
 
 export default function PedidoPage() {
   const params = useParams<{ pedidoId: string }>();
@@ -30,10 +37,49 @@ export default function PedidoPage() {
   const [finalizando, setFinalizando] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
+  // Cantidades locales por productoId para el catálogo
+  const [cantidadesCatalogo, setCantidadesCatalogo] = useState<
+    Record<number, number>
+  >({});
+
+  // Categoría activa para los tabs
+  const [categoriaActivaId, setCategoriaActivaId] = useState<number | null>(
+    null
+  );
+
   const total = useMemo(
-    () => detalles.reduce((acc, d) => acc + (d.subtotal ?? d.cantidad * d.precioUnitario), 0),
+    () =>
+      detalles.reduce(
+        (acc, d) => acc + (d.subtotal ?? d.cantidad * d.precioUnitario),
+        0
+      ),
     [detalles]
   );
+
+  function getCantidadCatalogo(productoId: number) {
+    return cantidadesCatalogo[productoId] ?? 1;
+  }
+
+  function cambiarCantidadCatalogo(productoId: number, delta: number) {
+    setCantidadesCatalogo((prev) => {
+      const actual = prev[productoId] ?? 1;
+      const nueva = actual + delta;
+      if (nueva < 1) return { ...prev, [productoId]: 1 };
+      if (nueva > 99) return { ...prev, [productoId]: 99 }; // por si acaso
+      return { ...prev, [productoId]: nueva };
+    });
+  }
+
+  function setCantidadCatalogoDirecto(productoId: number, valor: number) {
+    if (!Number.isFinite(valor) || valor <= 0) {
+      setCantidadesCatalogo((prev) => ({ ...prev, [productoId]: 1 }));
+      return;
+    }
+    setCantidadesCatalogo((prev) => ({
+      ...prev,
+      [productoId]: Math.min(Math.max(Math.round(valor), 1), 99),
+    }));
+  }
 
   async function cargarCatalogo() {
     try {
@@ -78,24 +124,25 @@ export default function PedidoPage() {
     cargarDetalles();
   }, [pedidoId]);
 
+  // Cuando se cargue el catálogo, seleccionamos la primera categoría como activa
+  useEffect(() => {
+    if (catalogo.length > 0 && categoriaActivaId === null) {
+      setCategoriaActivaId(catalogo[0].categoriaId);
+    }
+  }, [catalogo, categoriaActivaId]);
+
   async function handleAgregarProducto(
     productoId: number,
-    nombreProducto: string
+    nombreProducto: string,
+    cantidad: number
   ) {
     if (!pedidoId) return;
 
-    const cantidadStr = window.prompt(
-      `¿Cuántas unidades de "${nombreProducto}" deseas agregar?`,
-      '1'
-    );
-    if (!cantidadStr) return;
-
-    const cantidad = Number(cantidadStr);
     if (!Number.isFinite(cantidad) || cantidad <= 0) {
       showToast({
         type: 'warning',
         title: 'Cantidad inválida',
-        message: 'Ingresa una cantidad numérica mayor a cero.',
+        message: 'Ingresa una cantidad mayor a cero.',
       });
       return;
     }
@@ -127,10 +174,24 @@ export default function PedidoPage() {
     nuevaCantidad: number
   ) {
     if (nuevaCantidad <= 0) {
-      // Si es 0, preguntamos si desea eliminar
-      const confirmarEliminar = window.confirm(
-        `La cantidad es 0. ¿Deseas eliminar "${detalle.nombreProducto}" de la comanda?`
-      );
+      // Usamos el mismo esquema de confirm toast que para eliminar
+      const confirmarEliminar = await new Promise<boolean>((resolve) => {
+        try {
+          showToast({
+            type: 'confirm',
+            title: 'Eliminar producto',
+            message: `La cantidad es 0. ¿Deseas eliminar "${detalle.nombreProducto}" de la comanda?`,
+            onConfirm: () => resolve(true),
+            onCancel: () => resolve(false),
+          });
+        } catch {
+          const ok = window.confirm(
+            `La cantidad es 0. ¿Deseas eliminar "${detalle.nombreProducto}" de la comanda?`
+          );
+          resolve(ok);
+        }
+      });
+
       if (!confirmarEliminar) return;
       return handleEliminarDetalle(detalle);
     }
@@ -161,9 +222,25 @@ export default function PedidoPage() {
   }
 
   async function handleEliminarDetalle(detalle: PedidoDetalleDTO) {
-    const confirmar = window.confirm(
-      `¿Deseas eliminar "${detalle.nombreProducto}" de la comanda?`
-    );
+    // Mostrar diálogo de confirmación usando toast
+    const confirmar = await new Promise<boolean>((resolve) => {
+      try {
+        showToast({
+          type: 'confirm',
+          title: 'Eliminar producto',
+          message: `¿Deseas eliminar "${detalle.nombreProducto}" de la comanda?`,
+          onConfirm: () => resolve(true),
+          onCancel: () => resolve(false),
+        });
+      } catch {
+        // Fallback por si falla el toast
+        const ok = window.confirm(
+          `¿Deseas eliminar "${detalle.nombreProducto}" de la comanda?`
+        );
+        resolve(ok);
+      }
+    });
+
     if (!confirmar) return;
 
     try {
@@ -221,7 +298,6 @@ export default function PedidoPage() {
         message: 'La comanda se finalizó correctamente.',
       });
 
-      // Al finalizar, regresamos a las mesas
       router.push('/dashboard/mesas');
     } catch (err: any) {
       console.error(err);
@@ -236,7 +312,14 @@ export default function PedidoPage() {
   }
 
   const cargando =
-    cargandoCatalogo || cargandoDetalles || (!catalogo.length && !detalles.length);
+    cargandoCatalogo ||
+    cargandoDetalles ||
+    (!catalogo.length && !detalles.length);
+
+  // Obtenemos la categoría activa (para mostrar solo esa en el catálogo)
+  const categoriaActiva = categoriaActivaId
+    ? catalogo.find((c) => c.categoriaId === categoriaActivaId) ?? null
+    : null;
 
   return (
     <section className="space-y-4">
@@ -249,8 +332,9 @@ export default function PedidoPage() {
             className="
               inline-flex items-center gap-1 rounded-[var(--radius-md)]
               border border-[var(--border-color)]
-              bg-[var(--bg-elevated)] px-2 py-1 text-xs
+              bg-[var(--bg-elevated)] px-3 py-2 text-sm
               text-[var(--text-main)] hover:bg-[var(--bg-hover)]
+              active:scale-[0.98] transition
             "
           >
             <ArrowLeft className="h-4 w-4" />
@@ -262,7 +346,8 @@ export default function PedidoPage() {
               Comanda #{pedidoId}
             </h1>
             <p className="mt-1 text-sm text-[var(--text-secondary)]">
-              Agrega productos a la comanda, ajusta cantidades y finaliza el pedido.
+              Diseñado para trabajar cómodo en tablet: toca, suma, resta y
+              finaliza el pedido.
             </p>
           </div>
         </div>
@@ -273,8 +358,9 @@ export default function PedidoPage() {
           disabled={finalizando || procesandoAccion || detalles.length === 0}
           className="
             inline-flex items-center gap-2 rounded-[var(--radius-md)]
-            bg-emerald-500 px-3 py-1.5 text-sm font-medium text-white
+            bg-emerald-500 px-4 py-2 text-sm font-medium text-white
             hover:bg-emerald-600 disabled:opacity-60 disabled:cursor-not-allowed
+            active:scale-[0.98] transition
           "
         >
           {finalizando && (
@@ -285,14 +371,10 @@ export default function PedidoPage() {
         </button>
       </div>
 
-      {error && (
-        <p className="text-sm text-red-400">
-          {error}
-        </p>
-      )}
+      {error && <p className="text-sm text-red-400">{error}</p>}
 
       {/* CONTENIDO PRINCIPAL: IZQUIERDA CATÁLOGO / DERECHA COMANDA */}
-      <div className="grid gap-4 md:grid-cols-[minmax(0,1.4fr)_minmax(0,1fr)]">
+      <div className="grid gap-4 lg:grid-cols-[minmax(0,1.5fr)_minmax(0,1fr)]">
         {/* CATÁLOGO */}
         <div
           className="
@@ -318,59 +400,165 @@ export default function PedidoPage() {
               No hay productos disponibles en el catálogo.
             </p>
           ) : (
-            <div className="space-y-4 max-h-[70vh] overflow-y-auto pr-1">
-              {catalogo.map((cat) => (
-                <div key={cat.categoriaId} className="space-y-2">
-                  <h3 className="text-xs font-semibold uppercase tracking-wide text-[var(--text-secondary)]">
-                    {cat.nombre}
-                  </h3>
-
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-                    {cat.productos.map((prod) => (
+            <>
+              {/* TABS DE CATEGORÍAS */}
+              <div className="mb-3 border-b border-[var(--border-color)]">
+                <div className="flex gap-2 overflow-x-auto pb-1">
+                  {catalogo.map((cat) => {
+                    const activa = cat.categoriaId === categoriaActivaId;
+                    return (
                       <button
-                        key={prod.productoId}
+                        key={cat.categoriaId}
                         type="button"
-                        disabled={procesandoAccion}
-                        onClick={() =>
-                          handleAgregarProducto(
-                            prod.productoId,
-                            prod.nombre
-                          )
-                        }
-                        className="
-                          flex flex-col items-start rounded-[var(--radius-md)]
-                          border border-[var(--border-color)]
-                          bg-[var(--bg-elevated)] px-3 py-2 text-left
-                          hover:bg-[var(--bg-hover)] transition
-                          disabled:opacity-60 disabled:cursor-not-allowed
-                        "
+                        onClick={() => setCategoriaActivaId(cat.categoriaId)}
+                        className={`
+                          relative inline-flex items-center whitespace-nowrap
+                          rounded-full px-3 py-1.5 text-xs font-medium
+                          border
+                          ${activa
+                            ? 'bg-emerald-500/10 border-emerald-500 text-emerald-400'
+                            : 'bg-[var(--bg-elevated)] border-[var(--border-color)] text-[var(--text-secondary)] hover:bg-[var(--bg-hover)]'
+                          }
+                          transition
+                        `}
                       >
-                        <div className="flex w-full items-start justify-between gap-2">
-                          <div>
-                            <p className="text-sm font-medium text-[var(--text-main)]">
-                              {prod.nombre}
-                            </p>
-                            {prod.descripcion && (
-                              <p className="mt-0.5 text-[11px] text-[var(--text-muted)] line-clamp-2">
-                                {prod.descripcion}
-                              </p>
-                            )}
-                          </div>
-                          <span className="text-xs font-semibold text-[var(--text-main)] whitespace-nowrap">
-                            Q {prod.precio.toFixed(2)}
-                          </span>
-                        </div>
-
-                        <div className="mt-2 inline-flex items-center gap-1 text-[11px] text-[var(--text-secondary)]">
-                          <Plus className="h-3 w-3" />
-                          <span>Agregar a comanda</span>
-                        </div>
+                        {cat.nombre}
                       </button>
-                    ))}
-                  </div>
+                    );
+                  })}
                 </div>
-              ))}
-            </div>
+              </div>
+
+              {/* LISTADO DE PRODUCTOS DE LA CATEGORÍA ACTIVA */}
+              <div className="max-h-[70vh] overflow-y-auto pr-1">
+                {categoriaActiva && categoriaActiva.productos.length > 0 ? (
+                  <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-3">
+                    {categoriaActiva.productos.map((prod) => {
+                      const cantidad = getCantidadCatalogo(prod.productoId);
+                      return (
+                        <div
+                          key={prod.productoId}
+                          className="
+                            flex flex-col justify-between
+                            rounded-[var(--radius-md)]
+                            border border-[var(--border-color)]
+                            bg-[var(--bg-elevated)] px-3 py-3
+                            hover:bg-[var(--bg-hover)] transition
+                            gap-2
+                          "
+                        >
+                          <div className="flex w-full items-start justify-between gap-2">
+                            <div>
+                              <p className="text-sm font-semibold text-[var(--text-main)]">
+                                {prod.nombre}
+                              </p>
+                              {prod.descripcion && (
+                                <p className="mt-1 text-[11px] text-[var(--text-muted)] line-clamp-3">
+                                  {prod.descripcion}
+                                </p>
+                              )}
+                            </div>
+                            <span className="text-xs font-bold text-[var(--text-main)] whitespace-nowrap rounded-full border border-[var(--border-color)] px-2 py-1">
+                              Q {prod.precio.toFixed(2)}
+                            </span>
+                          </div>
+
+                          {/* Selector de cantidad + botón Agregar (touch friendly) */}
+                          <div className="mt-1 flex items-center justify-between gap-3">
+                            <div
+                              className="
+                                inline-flex items-center
+                                rounded-full border border-[var(--border-color)]
+                                bg-[var(--bg-card)] px-2 py-1
+                              "
+                            >
+                              <button
+                                type="button"
+                                onClick={() =>
+                                  cambiarCantidadCatalogo(
+                                    prod.productoId,
+                                    -1
+                                  )
+                                }
+                                disabled={procesandoAccion}
+                                className="
+                                  p-1 rounded-full
+                                  hover:bg-[var(--bg-hover)]
+                                  active:scale-95
+                                "
+                              >
+                                <Minus className="h-4 w-4" />
+                              </button>
+                              <input
+                                type="number"
+                                min={1}
+                                max={99}
+                                className="
+                                  w-12 mx-1 text-center text-sm
+                                  bg-transparent border-none
+                                  focus:outline-none
+                                "
+                                value={cantidad}
+                                onChange={(e) =>
+                                  setCantidadCatalogoDirecto(
+                                    prod.productoId,
+                                    Number(e.target.value)
+                                  )
+                                }
+                              />
+                              <button
+                                type="button"
+                                onClick={() =>
+                                  cambiarCantidadCatalogo(
+                                    prod.productoId,
+                                    1
+                                  )
+                                }
+                                disabled={procesandoAccion}
+                                className="
+                                  p-1 rounded-full
+                                  hover:bg-[var(--bg-hover)]
+                                  active:scale-95
+                                "
+                              >
+                                <Plus className="h-4 w-4" />
+                              </button>
+                            </div>
+
+                            <button
+                              type="button"
+                              disabled={procesandoAccion}
+                              onClick={() =>
+                                handleAgregarProducto(
+                                  prod.productoId,
+                                  prod.nombre,
+                                  cantidad
+                                )
+                              }
+                              className="
+                                inline-flex items-center justify-center
+                                rounded-[var(--radius-md)]
+                                bg-emerald-500 px-3 py-2 text-xs font-semibold text-white
+                                hover:bg-emerald-600
+                                disabled:opacity-60 disabled:cursor-not-allowed
+                                active:scale-[0.97] transition
+                              "
+                            >
+                              <Plus className="h-4 w-4 mr-1" />
+                              <span>Agregar</span>
+                            </button>
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                ) : (
+                  <p className="text-sm text-[var(--text-secondary)]">
+                    No hay productos configurados para esta categoría.
+                  </p>
+                )}
+              </div>
+            </>
           )}
         </div>
 
@@ -445,7 +633,7 @@ export default function PedidoPage() {
                               w-16 rounded-[var(--radius-sm)]
                               border border-[var(--border-color)]
                               bg-[var(--bg-elevated)]
-                              px-1 py-0.5 text-center text-xs
+                              px-1 py-1 text-center text-xs
                               focus:outline-none focus:ring-1 focus:ring-emerald-500
                             "
                             value={d.cantidad}
@@ -475,7 +663,7 @@ export default function PedidoPage() {
                             disabled={procesandoAccion}
                             className="
                               inline-flex items-center justify-center
-                              rounded-full p-1
+                              rounded-full p-1.5
                               text-red-400 hover:bg-red-500/10
                               disabled:opacity-60 disabled:cursor-not-allowed
                             "
@@ -494,7 +682,7 @@ export default function PedidoPage() {
                 <span className="text-sm font-medium text-[var(--text-secondary)]">
                   Total
                 </span>
-                <span className="text-lg font-semibold text-[var(--text-main)]">
+                <span className="text-xl font-semibold text-[var(--text-main)]">
                   Q {total.toFixed(2)}
                 </span>
               </div>

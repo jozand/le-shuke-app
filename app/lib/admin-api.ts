@@ -452,13 +452,16 @@ export async function eliminarDetallePedido(
  * Finaliza el pedido/comanda.
  * Endpoint sugerido: POST /api/pedidos/[pedidoId]/finalizar
  */
-export async function finalizarPedido(
-  pedidoId: number
-): Promise<{ ok: boolean }> {
+export async function finalizarPedido(pedidoId: number) {
   const res = await fetch(`/api/pedidos/${pedidoId}/finalizar`, {
-    method: 'POST',
-    cache: 'no-store',
+    method: 'PUT', // o 'POST' si prefieres, con el handler de arriba igual funciona
   });
 
-  return handleResponse<{ ok: boolean }>(res);
+  if (!res.ok) {
+    const body = await res.json().catch(() => null);
+    throw new Error(body?.mensaje || 'Error al finalizar pedido');
+  }
+
+  const json = await res.json();
+  return json.data;
 }
