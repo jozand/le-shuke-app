@@ -85,14 +85,18 @@ export default function PedidoPage() {
       setCargandoCatalogo(true);
       const data = await obtenerCatalogoConProductos();
       setCatalogo(data);
-    } catch (err: any) {
-      setError(err.message || 'Error al cargar catálogo de productos');
+    } catch (err: unknown) {
+      const mensaje =
+        err instanceof Error ? err.message : 'Error al cargar catálogo de productos';
+
+      setError(mensaje);
       showToast({
         type: 'error',
         title: 'Error',
-        message: err.message || 'Error al cargar catálogo de productos',
+        message: mensaje,
       });
-    } finally {
+    }
+    finally {
       setCargandoCatalogo(false);
     }
   }
@@ -102,14 +106,18 @@ export default function PedidoPage() {
       setCargandoDetalles(true);
       const data = await obtenerPedidoDetalle(pedidoId);
       setDetalles(data);
-    } catch (err: any) {
-      setError(err.message || 'Error al cargar la comanda');
+    } catch (err: unknown) {
+      const mensaje =
+        err instanceof Error ? err.message : 'Error al cargar la comanda';
+
+      setError(mensaje);
       showToast({
         type: 'error',
         title: 'Error',
-        message: err.message || 'Error al cargar la comanda',
+        message: mensaje,
       });
-    } finally {
+    }
+    finally {
       setCargandoDetalles(false);
     }
   }
@@ -122,13 +130,17 @@ export default function PedidoPage() {
       if (data.length === 1) {
         setMetodoPagoSeleccionadoId(data[0].metodoPagoId);
       }
-    } catch (err: any) {
+    } catch (err: unknown) {
+      const mensaje =
+        err instanceof Error ? err.message : 'Error al cargar métodos de pago.';
+
       showToast({
         type: 'error',
         title: 'Error',
-        message: err.message || 'Error al cargar métodos de pago.',
+        message: mensaje,
       });
-    } finally {
+    }
+    finally {
       setCargandoMetodosPago(false);
     }
   }
@@ -169,13 +181,17 @@ export default function PedidoPage() {
         title: 'Producto agregado',
         message: `Se agregaron ${cantidad} unidad(es) de "${nombreProducto}" a la comanda.`,
       });
-    } catch (err: any) {
+    } catch (err: unknown) {
+      const mensaje =
+        err instanceof Error ? err.message : 'No se pudo agregar el producto.';
+
       showToast({
         type: 'error',
         title: 'Error',
-        message: err.message || 'No se pudo agregar el producto.',
+        message: mensaje,
       });
-    } finally {
+    }
+    finally {
       setProcesandoAccion(false);
     }
   }
@@ -209,13 +225,17 @@ export default function PedidoPage() {
         title: 'Cantidad actualizada',
         message: `Se actualizó la cantidad de "${detalle.nombreProducto}".`,
       });
-    } catch (err: any) {
+    } catch (err: unknown) {
+      const mensaje =
+        err instanceof Error ? err.message : 'No se pudo actualizar la cantidad.';
+
       showToast({
         type: 'error',
         title: 'Error',
-        message: err.message || 'No se pudo actualizar la cantidad.',
+        message: mensaje,
       });
-    } finally {
+    }
+    finally {
       setProcesandoAccion(false);
     }
   }
@@ -243,13 +263,17 @@ export default function PedidoPage() {
         title: 'Producto eliminado',
         message: `"${detalle.nombreProducto}" fue eliminado de la comanda.`,
       });
-    } catch (err: any) {
+    } catch (err: unknown) {
+      const mensaje =
+        err instanceof Error ? err.message : 'No se pudo eliminar el producto.';
+
       showToast({
         type: 'error',
         title: 'Error',
-        message: err.message || 'No se pudo eliminar el producto.',
+        message: mensaje,
       });
-    } finally {
+    }
+    finally {
       setProcesandoAccion(false);
     }
   }
@@ -303,13 +327,17 @@ export default function PedidoPage() {
       });
 
       router.push('/dashboard/mesas');
-    } catch (err: any) {
+    } catch (err: unknown) {
+      const mensaje =
+        err instanceof Error ? err.message : 'No se pudo finalizar el pedido.';
+
       showToast({
         type: 'error',
         title: 'Error',
-        message: err.message || 'No se pudo finalizar el pedido.',
+        message: mensaje,
       });
-    } finally {
+    }
+    finally {
       setFinalizando(false);
     }
   }

@@ -7,6 +7,7 @@ export type ToastType = 'success' | 'error' | 'info' | 'warning' | 'confirm';
 
 export interface ToastOptions {
   type?: ToastType;
+  title?: string;
   message: string;
   duration?: number; // default: 5000 excepto confirm
   onConfirm?: () => void; // sólo confirm

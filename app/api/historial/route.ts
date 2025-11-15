@@ -1,7 +1,20 @@
 // app/api/historial/route.ts
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/app/lib/prisma';
-import type { Prisma } from '@/app/generated/prisma'; // ⬅️ si usas @prisma/client cámbialo a '@prisma/client'
+import type { Prisma } from '@/app/generated/prisma';
+
+// =========================
+// TIPO CORRECTO DEL PEDIDO
+// =========================
+type PedidoConTodo = Prisma.PedidoGetPayload<{
+  include: {
+    mesa: true;
+    usuario: true;
+    detalles: {
+      include: { producto: true };
+    };
+  };
+}>;
 
 export async function GET(req: NextRequest) {
   try {
@@ -9,45 +22,36 @@ export async function GET(req: NextRequest) {
     const desde = url.searchParams.get('desde');
     const hasta = url.searchParams.get('hasta');
 
-    // Filtro de fechas opcional
+    // Filtro de fechas
     const fechaFilter: { gte?: Date; lte?: Date } = {};
-    if (desde) {
-      fechaFilter.gte = new Date(desde);
-    }
+
+    if (desde) fechaFilter.gte = new Date(desde);
     if (hasta) {
-      const hastaDate = new Date(hasta);
-      hastaDate.setHours(23, 59, 59, 999); // incluir todo el día
-      fechaFilter.lte = hastaDate;
+      const h = new Date(hasta);
+      h.setHours(23, 59, 59, 999);
+      fechaFilter.lte = h;
     }
 
-    // ✅ Sin any: usamos el tipo de Prisma
     const where: Prisma.PedidoWhereInput = {};
 
     if (desde || hasta) {
-      // ⬅️ tu modelo tiene fechaHora (no fechaSistema)
       where.fechaHora = fechaFilter;
     }
 
-    // ✅ Tipamos también los argumentos de findMany
-    const findArgs: Prisma.PedidoFindManyArgs = {
+    // ===============================
+    // CONSULTA CORRECTAMENTE TIPADA
+    // ===============================
+    const pedidos: PedidoConTodo[] = await prisma.pedido.findMany({
       where,
       include: {
         mesa: true,
         usuario: true,
-        // 👇 Ajusta el nombre de la relación si en tu schema no se llama "detalles"
         detalles: {
-          include: {
-            producto: true,
-          },
+          include: { producto: true },
         },
       },
-      // ⬅️ ordenar por fechaHora, que sí existe
-      orderBy: {
-        fechaHora: 'desc',
-      },
-    };
-
-    const pedidos = await prisma.pedido.findMany(findArgs);
+      orderBy: { fechaHora: 'desc' },
+    });
 
     const data = pedidos.map((p) => ({
       pedidoId: p.pedidoId,
@@ -55,7 +59,7 @@ export async function GET(req: NextRequest) {
       mesaNombre: p.mesa?.nombre ?? null,
       fecha: p.fechaHora.toISOString(),
       usuarioNombre: p.usuario?.nombre ?? 'N/D',
-      total: Number(p.total), // ⬅️ ya tienes campo total en el modelo
+      total: Number(p.total),
       estado: p.estado,
       detalles: p.detalles.map((d) => ({
         pedidoDetalleId: d.pedidoDetalleId,

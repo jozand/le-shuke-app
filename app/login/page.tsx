@@ -1,25 +1,22 @@
-// app/login/page.tsx
 'use client';
 
 import React, { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Image from 'next/image';
-import { useAuth } from '@/context/AuthContext'; // 👈 IMPORTANTE
+import { useAuth } from '@/context/AuthContext';
 import { useToast } from '@/context/ToastContext';
 
 export default function LoginPage() {
   const router = useRouter();
-
-  const { setUsuario } = useAuth(); // 👈 AHORA TENEMOS ACCESO AL CONTEXTO
+  const { setUsuario } = useAuth();
+  const { showToast } = useToast();
 
   const [email, setEmail] = useState('admin@restaurante.com');
   const [password, setPassword] = useState('123456');
   const [cargando, setCargando] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const { showToast } = useToast();
-
-  // Verificar si ya hay sesión activa
+  // 👉 Verificar si ya hay sesión activa
   useEffect(() => {
     const verificarSesion = async () => {
       try {
@@ -28,14 +25,19 @@ export default function LoginPage() {
 
         const data = await resp.json();
         if (data?.ok) router.replace('/dashboard');
-      } catch (err) {
-        console.warn('Error verificando sesión:', err);
+      } catch (err: unknown) {
+        if (err instanceof Error) {
+          console.warn('Error verificando sesión:', err.message);
+        } else {
+          console.warn('Error verificando sesión.');
+        }
       }
     };
 
     verificarSesion();
   }, [router]);
 
+  // 👉 Manejo del formulario
   const manejarSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setCargando(true);
@@ -55,7 +57,7 @@ export default function LoginPage() {
         return;
       }
 
-      // 👇 Guardamos el usuario en AuthContext
+      // Guardar sesión en contexto global
       setUsuario({
         usuarioId: data.data.usuarioId,
         nombre: data.data.nombre,
@@ -63,15 +65,19 @@ export default function LoginPage() {
         rol: data.data.rol,
       });
 
-      // Espera mínima para evitar glitches
+      // Para evitar glitch visual
       setTimeout(() => router.push('/dashboard'), 80);
+
       showToast({
         type: 'success',
-        message: 'Bienvenido a Le Shuké App.'
+        message: 'Bienvenido a Le Shuké App.',
       });
-
-    } catch (err) {
-      setError('Error de conexión con el servidor');
+    } catch (err: unknown) {
+      if (err instanceof Error) {
+        setError('Error de conexión: ' + err.message);
+      } else {
+        setError('Error de conexión con el servidor');
+      }
     } finally {
       setCargando(false);
     }
@@ -81,10 +87,10 @@ export default function LoginPage() {
     <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-slate-900 via-slate-800 to-blue-900">
       <div className="relative w-full max-w-md bg-white/10 backdrop-blur-xl shadow-2xl border border-white/20 rounded-2xl px-10 py-12 overflow-hidden">
 
-        {/* Glow decorativo de fondo */}
+        {/* Glow decorativo */}
         <div className="pointer-events-none absolute inset-x-10 -top-24 h-40 bg-blue-500/30 blur-3xl" />
 
-        {/* LOGO con efecto */}
+        {/* Logo */}
         <div className="relative flex justify-center mb-6">
           <div className="absolute inset-0 flex items-center justify-center">
             <div className="h-24 w-24 rounded-full bg-blue-500/25 blur-2xl" />
@@ -100,7 +106,7 @@ export default function LoginPage() {
           />
         </div>
 
-        {/* Encabezado */}
+        {/* Título */}
         <h1 className="text-3xl font-bold text-center text-white mb-2 tracking-tight">
           Le Shuké App
         </h1>

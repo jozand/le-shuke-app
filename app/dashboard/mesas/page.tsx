@@ -12,6 +12,15 @@ import { useToast } from '@/context/ToastContext';
 import { Loader2, AlertCircle } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 
+type MesaConPedido = MesaEstadoDTO & {
+  pedidoId?: number | null;
+  pedidoIdActivo?: number | null;
+};
+
+function obtenerPedidoIdActiva(mesa: MesaConPedido): number | null {
+  return mesa.pedidoIdActivo ?? mesa.pedidoId ?? null;
+}
+
 export default function MesasPage() {
   const { usuario } = useAuth();
   const { showToast } = useToast();
@@ -28,13 +37,16 @@ export default function MesasPage() {
       setCargandoLista(true);
       const data = await obtenerMesasEstado();
       setMesas(data);
-    } catch (err: any) {
+    } catch (err: unknown) {
+      const message = err instanceof Error ? err.message : 'Error al cargar mesas';
+
       console.error(err);
-      setError(err.message || 'Error al cargar las mesas');
+      setError(message);
+
       showToast({
         type: 'error',
         title: 'Error',
-        message: err.message || 'Error al cargar las mesas',
+        message,
       });
     } finally {
       setCargandoLista(false);
@@ -55,52 +67,40 @@ export default function MesasPage() {
       return;
     }
 
-    // 🟥 CASO 1: MESA YA OCUPADA → IR DIRECTO A LA COMANDA
-    if (mesa.ocupada) {
-      // Ajusta el nombre de la propiedad según tu DTO:
-      // por ejemplo: mesa.pedidoIdActivo, mesa.pedidoId, mesa.pedidoIdActual, etc.
-      const pedidoId = (mesa as any).pedidoIdActivo ?? (mesa as any).pedidoId;
+    const pedidoId = obtenerPedidoIdActiva(mesa);
 
+    // 🟥 Caso 1: Mesa ocupada → ir al pedido ya existente
+    if (mesa.ocupada) {
       if (!pedidoId) {
-        // Si por alguna razón no tienes el id del pedido
         showToast({
           type: 'info',
           title: 'Mesa ocupada',
           message:
-            `La mesa ${mesa.numero} ya tiene una comanda activa, ` +
-            'pero no se recibió el identificador del pedido.',
+            `La mesa ${mesa.numero} ya está ocupada, ` +
+            'pero no se recibió su pedido activo.',
         });
         return;
       }
 
       showToast({
         type: 'info',
-        title: 'Ir a comanda',
-        message: `Abriendo la comanda #${pedidoId} de la mesa ${mesa.numero}.`,
+        title: 'Comanda activa',
+        message: `Abriendo la comanda #${pedidoId}.`,
       });
 
       router.push(`/dashboard/pedidos/${pedidoId}`);
       return;
     }
 
-    // 🟩 CASO 2: MESA LIBRE → CONFIRMAR Y CREAR COMANDA
+    // 🟩 Caso 2: Mesa libre → abrir comanda
     const confirmar = await new Promise<boolean>((resolve) => {
-      try {
-        // Si tu ToastContext soporta confirmación:
-        showToast({
-          type: 'confirm',
-          title: 'Abrir comanda',
-          message: `¿Deseas abrir una nueva comanda para la mesa ${mesa.numero}?`,
-          onConfirm: () => resolve(true),
-          onCancel: () => resolve(false),
-        });
-      } catch {
-        // Fallback nativo
-        const ok = window.confirm(
-          `¿Deseas abrir una nueva comanda para la mesa ${mesa.numero}?`
-        );
-        resolve(ok);
-      }
+      showToast({
+        type: 'confirm',
+        title: 'Abrir comanda',
+        message: `¿Deseas abrir una nueva comanda para la mesa ${mesa.numero}?`,
+        onConfirm: () => resolve(true),
+        onCancel: () => resolve(false),
+      });
     });
 
     if (!confirmar) return;
@@ -110,7 +110,7 @@ export default function MesasPage() {
 
       const pedido: PedidoDTO = await abrirComanda({
         mesaId: mesa.mesaId,
-        usuarioId: usuario.usuarioId, // Ajusta al nombre real de tu propiedad
+        usuarioId: usuario.usuarioId,
       });
 
       showToast({
@@ -119,17 +119,18 @@ export default function MesasPage() {
         message: `Se abrió la comanda #${pedido.pedidoId} para la mesa ${mesa.numero}.`,
       });
 
-      // 🔁 refrescamos estado de mesas
       await cargarMesas();
 
-      // 🚀 Navegamos a la página de la comanda
       router.push(`/dashboard/pedidos/${pedido.pedidoId}`);
-    } catch (err: any) {
+    } catch (err: unknown) {
+      const message = err instanceof Error ? err.message : 'No se pudo abrir la comanda.';
+
       console.error(err);
+
       showToast({
         type: 'error',
         title: 'Error',
-        message: err.message || 'No se pudo abrir la comanda.',
+        message,
       });
     } finally {
       setCargandoMesaId(null);
