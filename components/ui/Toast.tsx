@@ -4,7 +4,20 @@ import { motion } from 'framer-motion';
 import { useEffect, useState } from 'react';
 import { CheckCircle, XCircle, Info, AlertTriangle } from 'lucide-react';
 
-export function Toast({ toast, removeToast }) {
+interface ToastProps {
+  toast: {
+    id: string;
+    type: 'success' | 'error' | 'info' | 'warning' | 'confirm';
+    message: string;
+    duration: number;
+    onConfirm?: () => void;
+    onCancel?: () => void;
+  };
+  removeToast: (id: string) => void;
+}
+
+export function Toast({ toast, removeToast }: ToastProps) {
+
   const [progress, setProgress] = useState(100);
   const isConfirm = toast.type === 'confirm';
 
@@ -16,7 +29,7 @@ export function Toast({ toast, removeToast }) {
 
     if (toast.duration <= 0) return;
 
-    let interval = setInterval(() => {
+    const interval = setInterval(() => {
       setProgress((prev) => {
         const next = prev - (100 / (toast.duration / 50));
         if (next <= 0) {
@@ -38,7 +51,9 @@ export function Toast({ toast, removeToast }) {
     error: <XCircle size={20} className="text-red-400" />,
     info: <Info size={20} className="text-blue-400" />,
     warning: <AlertTriangle size={20} className="text-yellow-400" />,
+    confirm: <Info size={20} className="text-yellow-300" />, // 👈 agregado
   };
+
 
   // ============================
   // CASO ESPECIAL: CONFIRM DIALOG

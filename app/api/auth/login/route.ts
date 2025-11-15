@@ -1,4 +1,4 @@
-// app/api/auth/login/route.ts  (ajusta la ruta si la tienes en otro lado)
+// app/api/auth/login/route.ts
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/app/lib/prisma';
 import { firmarToken } from '@/app/lib/auth';
@@ -37,12 +37,14 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    // 🎯 Construimos el token SOLO con los campos definidos en JwtPayload
     const token = firmarToken({
       usuarioId: usuario.usuarioId,
-      rolId: usuario.rolId,
-      email: usuario.email,
+      nombre: usuario.nombre,
+      rol: usuario.rol?.nombre || 'Usuario',
     });
 
+    // 🎯 Respuesta de login
     const resp = NextResponse.json(
       {
         ok: true,
@@ -57,9 +59,10 @@ export async function POST(request: NextRequest) {
       { status: 200 }
     );
 
+    // 🍪 Guardamos cookie HTTP-only
     resp.cookies.set('auth_token', token, {
       httpOnly: true,
-      secure: false, // ⚠️ en localhost false; en producción ponlo en true
+      secure: false, // ⚠️ en localhost false; en producción true
       sameSite: 'lax',
       path: '/',
       maxAge: 60 * 60 * 4, // 4 horas

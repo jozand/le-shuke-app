@@ -11,11 +11,10 @@ services:
       MYSQL_USER: le_shuke_user
       MYSQL_PASSWORD: le_shuke_password
       TZ: America/Guatemala
-    # Internamente MySQL sigue en 3306, pero lo exponemos como 3307 en el host
     ports:
       - '3307:3306'
+    # ❗IMPORTANTE: eliminamos --default-authentication-plugin (causa crash en MySQL 8.4)
     command: >
-      --default-authentication-plugin=mysql_native_password
       --character-set-server=utf8mb4
       --collation-server=utf8mb4_unicode_ci
     volumes:
@@ -28,16 +27,14 @@ services:
     container_name: le_shuke_app
     depends_on:
       - db
-    # Exponemos el 4000 del contenedor al 4000 del host
     ports:
       - '4000:4000'
     environment:
       NODE_ENV: production
       TZ: America/Guatemala
-      # Dentro de la red de Docker, la BD sigue siendo db:3306
       DATABASE_URL: mysql://le_shuke_user:le_shuke_password@db:3306/le_shuke_db
       PORT: 4000
-    # Si quieres aplicar migraciones automáticamente al arrancar:
+    # Para ejecutar migraciones automáticamente descomenta esto:
     # command: >
     #   sh -c "npx prisma migrate deploy && npm run start"
 
