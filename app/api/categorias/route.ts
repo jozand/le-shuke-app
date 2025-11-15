@@ -37,7 +37,7 @@ export async function POST(req: Request) {
     });
 
     return NextResponse.json({ ok: true, data: categoria }, { status: 201 });
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error('Error POST /categorias', error);
     return NextResponse.json(
       { ok: false, mensaje: 'Error al crear categoría' },

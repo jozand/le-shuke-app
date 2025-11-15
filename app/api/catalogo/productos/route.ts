@@ -1,28 +1,42 @@
 // app/api/catalogo/productos/route.ts
-import { NextResponse } from 'next/server';
+
+import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/app/lib/prisma';
 
-export async function GET() {
+/* ============================================================
+   Tipos de respuesta (DTO)
+============================================================ */
+
+interface ProductoCatalogoDTO {
+  productoId: number;
+  nombre: string;
+  descripcion: string | null;
+  precio: number;
+}
+
+interface CategoriaCatalogoDTO {
+  categoriaId: number;
+  nombre: string;
+  productos: ProductoCatalogoDTO[];
+}
+
+interface ApiResponse {
+  ok: boolean;
+  data: CategoriaCatalogoDTO[];
+}
+
+/* ============================================================
+   GET /api/catalogo/productos
+============================================================ */
+export async function GET(_req: NextRequest) {
   try {
-    /**
-     * Traemos las categorías ACTIVAS con sus productos ACTIVOS.
-     * Ajusta `where` si quieres incluir inactivos.
-     */
     const categorias = await prisma.categoria.findMany({
-      where: {
-        activa: true,
-      },
-      orderBy: {
-        nombre: 'asc',
-      },
+      where: { activa: true },
+      orderBy: { nombre: 'asc' },
       include: {
         productos: {
-          where: {
-            activo: true,
-          },
-          orderBy: {
-            nombre: 'asc',
-          },
+          where: { activo: true },
+          orderBy: { nombre: 'asc' },
           select: {
             productoId: true,
             nombre: true,
@@ -33,25 +47,25 @@ export async function GET() {
       },
     });
 
-    return NextResponse.json(
-      {
-        ok: true,
-        data: categorias.map((cat) => ({
-          categoriaId: cat.categoriaId,
-          nombre: cat.nombre,
-          productos: cat.productos.map((p) => ({
-            productoId: p.productoId,
-            nombre: p.nombre,
-            descripcion: p.descripcion,
-            // Decimal → number
-            precio: Number(p.precio),
-          })),
-        })),
-      },
-      { status: 200 }
-    );
-  } catch (error: any) {
-    console.error('Error en GET /api/catalogo/productos:', error);
+    const data: CategoriaCatalogoDTO[] = categorias.map((cat) => ({
+      categoriaId: cat.categoriaId,
+      nombre: cat.nombre,
+      productos: cat.productos.map((p) => ({
+        productoId: p.productoId,
+        nombre: p.nombre,
+        descripcion: p.descripcion,
+        precio: Number(p.precio),
+      })),
+    }));
+
+    const response: ApiResponse = {
+      ok: true,
+      data,
+    };
+
+    return NextResponse.json(response, { status: 200 });
+  } catch (error: unknown) {
+    console.error('[GET /api/catalogo/productos]', error);
 
     return NextResponse.json(
       {

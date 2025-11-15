@@ -7,7 +7,8 @@
     "build": "next build",
     "start": "next start",
     "lint": "eslint",
-    "prisma:seed": "tsx prisma/seed.ts"
+    "prisma:seed": "tsx prisma/seed.ts",
+    "check:routes": "tsx scripts/check-api-routes.ts"
   },
   "dependencies": {
     "@prisma/client": "^6.19.0",

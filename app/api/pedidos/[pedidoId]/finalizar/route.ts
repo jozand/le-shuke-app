@@ -95,7 +95,7 @@ export async function PUT(
     }
 
     const total = detalles.reduce(
-      (acc, d) => acc + d.cantidad * d.precioUnitario,
+      (acc, d) => acc + d.cantidad * Number(d.precioUnitario),
       0
     );
 

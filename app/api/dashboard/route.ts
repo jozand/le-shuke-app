@@ -18,6 +18,7 @@ export async function GET(req: NextRequest) {
 
     const desde = desdeStr ? new Date(desdeStr) : primerDiaMes;
     const hastaBase = hastaStr ? new Date(hastaStr) : hoy;
+
     // Ajustamos hasta el final del día
     const hasta = new Date(
       hastaBase.getFullYear(),
@@ -52,25 +53,25 @@ export async function GET(req: NextRequest) {
         rolNormalizado === 'admin';
     }
 
-    // 🔹 Filtro base para pedidos
-    const wherePedidoBase: any = {
+    // 🔹 Filtro base para pedidos (dejamos que TS infiera el tipo)
+    const wherePedidoBase = {
       fechaHora: {
         gte: desde,
         lte: hasta,
-      },
+      } as { gte: Date; lte: Date },
+      // usuarioId se agrega condicionalmente abajo
+      ...(!esAdmin && usuarioId
+        ? { usuarioId }
+        : {}
+      ),
     };
 
-    // Si NO es admin, filtramos por usuario
-    if (!esAdmin && usuarioId) {
-      wherePedidoBase.usuarioId = usuarioId;
-    }
-
-    // 🔹 Filtro base para pagos
-    const wherePagoBase: any = {
+    // 🔹 Filtro base para pagos (también inferido)
+    const wherePagoBase = {
       fechaPago: {
         gte: desde,
         lte: hasta,
-      },
+      } as { gte: Date; lte: Date },
       pedido: {
         ...wherePedidoBase,
       },
@@ -318,12 +319,16 @@ export async function GET(req: NextRequest) {
     };
 
     return NextResponse.json({ data }, { status: 200 });
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error('Error en /api/dashboard:', error);
+
+    const detalle =
+      error instanceof Error ? error.message : 'Error inesperado';
+
     return NextResponse.json(
       {
         mensaje: 'Error al obtener datos de dashboard',
-        detalle: error?.message || 'Error inesperado',
+        detalle,
       },
       { status: 500 }
     );

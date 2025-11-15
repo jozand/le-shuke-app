@@ -1,16 +1,34 @@
 // app/api/roles/[id]/route.ts
-import { NextResponse } from 'next/server';
+
+import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/app/lib/prisma';
 
-interface Params {
-  params: { id: string };
+// Helper para convertir ID y validar
+async function getIdFromParams(
+  paramsPromise: Promise<{ id: string }>
+): Promise<number> {
+  const { id } = await paramsPromise;
+  const rolId = Number(id);
+
+  if (!rolId || Number.isNaN(rolId)) {
+    throw new Error(`ID de rol inválido: "${id}"`);
+  }
+
+  return rolId;
 }
 
-export async function GET(_req: Request, { params }: Params) {
+/* ============================================================
+   GET /api/roles/[id]
+============================================================ */
+export async function GET(
+  _req: NextRequest,
+  { params }: { params: Promise<{ id: string }> }
+) {
   try {
-    const id = Number(params.id);
+    const rolId = await getIdFromParams(params);
+
     const rol = await prisma.rol.findUnique({
-      where: { rolId: id },
+      where: { rolId },
     });
 
     if (!rol) {
@@ -22,7 +40,7 @@ export async function GET(_req: Request, { params }: Params) {
 
     return NextResponse.json({ ok: true, data: rol });
   } catch (error) {
-    console.error('Error GET /roles/[id]', error);
+    console.error('[GET /roles/[id]]', error);
     return NextResponse.json(
       { ok: false, mensaje: 'Error al obtener rol' },
       { status: 500 }
@@ -30,13 +48,21 @@ export async function GET(_req: Request, { params }: Params) {
   }
 }
 
-export async function PUT(req: Request, { params }: Params) {
+/* ============================================================
+   PUT /api/roles/[id]
+============================================================ */
+export async function PUT(
+  req: NextRequest,
+  { params }: { params: Promise<{ id: string }> }
+) {
   try {
-    const id = Number(params.id);
-    const { nombre, descripcion, estado } = await req.json();
+    const rolId = await getIdFromParams(params);
+    const body = await req.json();
+
+    const { nombre, descripcion, estado } = body;
 
     const rol = await prisma.rol.update({
-      where: { rolId: id },
+      where: { rolId },
       data: {
         nombre,
         descripcion: descripcion ?? null,
@@ -46,7 +72,7 @@ export async function PUT(req: Request, { params }: Params) {
 
     return NextResponse.json({ ok: true, data: rol });
   } catch (error) {
-    console.error('Error PUT /roles/[id]', error);
+    console.error('[PUT /roles/[id]]', error);
     return NextResponse.json(
       { ok: false, mensaje: 'Error al actualizar rol' },
       { status: 500 }
@@ -54,18 +80,24 @@ export async function PUT(req: Request, { params }: Params) {
   }
 }
 
-export async function DELETE(_req: Request, { params }: Params) {
+/* ============================================================
+   DELETE /api/roles/[id]
+============================================================ */
+export async function DELETE(
+  _req: NextRequest,
+  { params }: { params: Promise<{ id: string }> }
+) {
   try {
-    const id = Number(params.id);
+    const rolId = await getIdFromParams(params);
 
     const rol = await prisma.rol.update({
-      where: { rolId: id },
+      where: { rolId },
       data: { estado: false },
     });
 
     return NextResponse.json({ ok: true, data: rol });
   } catch (error) {
-    console.error('Error DELETE /roles/[id]', error);
+    console.error('[DELETE /roles/[id]]', error);
     return NextResponse.json(
       { ok: false, mensaje: 'Error al eliminar rol' },
       { status: 500 }
