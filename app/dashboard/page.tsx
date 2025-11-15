@@ -85,14 +85,15 @@ export default async function DashboardPage() {
   const payload = verificarToken(token) as TokenPayload | null;
   if (!payload) redirect('/login');
 
-  // 🔹 Llamar al endpoint /api/dashboard con el usuarioId del token
-  const origin =
-    process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:3000';
+  // 🔹 Si hay NEXT_PUBLIC_BASE_URL la usamos; si no, usamos ruta relativa
+  const baseUrl = process.env.NEXT_PUBLIC_BASE_URL ?? '';
 
-  const res = await fetch(`${origin}/api/dashboard`, {
+  const res = await fetch(`${baseUrl}/api/dashboard`, {
     method: 'GET',
     headers: {
       'x-usuario-id': String(payload.usuarioId),
+      // si quieres pasar también el rol:
+      // 'x-rol': payload.rol,
     },
     cache: 'no-store',
   });
@@ -182,7 +183,8 @@ export default async function DashboardPage() {
           Bienvenido al sistema de control de comandas del restaurante.
         </p>
         <p className="mt-1 text-xs text-[var(--text-muted)]">
-          Período analizado: <span className="font-medium">{periodoTexto}</span>{' '}
+          Período analizado:{' '}
+          <span className="font-medium">{periodoTexto}</span>{' '}
           · Vista:{' '}
           <span className="font-medium">
             {filtros.esAdmin ? 'Todos los usuarios' : 'Solo mis ventas'}

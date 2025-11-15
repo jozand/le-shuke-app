@@ -4,127 +4,104 @@ import { PrismaClient } from '../app/generated/prisma';
 const prisma = new PrismaClient();
 
 async function main() {
-  console.log('🌱 Iniciando seed de la base de datos...');
+  console.log('🌱 Iniciando seed personalizado...');
 
-  // 1. Roles
-  const adminRol = await prisma.rol.upsert({
-    where: { nombre: 'Administrador' },
+  // Fecha fija según tus INSERTs
+  const fecha = new Date('2025-11-14T23:24:56.925Z');
+
+  /* ================================
+     1. ROLES
+  ================================== */
+  await prisma.rol.upsert({
+    where: { rolId: 1 },
     update: {},
     create: {
+      rolId: 1,
       nombre: 'Administrador',
       descripcion: 'Acceso total al sistema',
+      estado: true,
+      fechaSistema: fecha,
     },
   });
 
-  const meseroRol = await prisma.rol.upsert({
-    where: { nombre: 'Mesero' },
+  await prisma.rol.upsert({
+    where: { rolId: 2 },
     update: {},
     create: {
+      rolId: 2,
       nombre: 'Mesero',
-      descripcion: 'Toma pedidos y atiende mesas',
+      descripcion: 'Acceso parcial',
+      estado: true,
+      fechaSistema: fecha,
     },
   });
 
-  const cajeroRol = await prisma.rol.upsert({
-    where: { nombre: 'Cajero' },
+  /* ================================
+     2. USUARIO ADMINISTRADOR
+  ================================== */
+  await prisma.usuario.upsert({
+    where: { usuarioId: 1 },
     update: {},
     create: {
-      nombre: 'Cajero',
-      descripcion: 'Procesa pagos y facturación',
-    },
-  });
-
-  // 2. Usuario Administrador
-  const adminUser = await prisma.usuario.upsert({
-    where: { email: 'admin@restaurante.com' },
-    update: {},
-    create: {
+      usuarioId: 1,
       nombre: 'Administrador General',
-      email: 'admin@restaurante.com',
-      password: '123456', // ⚠️ cámbialo luego por hash
-      rolId: adminRol.rolId,
+      email: 'admin@leshuke.com',
+      password:
+        '$2b$10$4tJxjw1OUD5VtnPKJHkE/OPjy5d..UW7sgNFQroRaSiVzjtU.hdu2',
+      rolId: 1,
+      activo: true,
+      fechaSistema: new Date('2025-11-14T23:24:56.949Z'),
     },
   });
 
-  // 3. Categorías
-  const categorias = await Promise.all([
-    prisma.categoria.upsert({
-      where: { nombre: 'Entradas' },
-      update: {},
-      create: { nombre: 'Entradas' },
-    }),
-    prisma.categoria.upsert({
-      where: { nombre: 'Platos Fuertes' },
-      update: {},
-      create: { nombre: 'Platos Fuertes' },
-    }),
-    prisma.categoria.upsert({
-      where: { nombre: 'Bebidas' },
-      update: {},
-      create: { nombre: 'Bebidas' },
-    }),
-  ]);
+  /* ================================
+     3. MÉTODOS DE PAGO
+  ================================== */
 
-  // 4. Productos de ejemplo
-  const productos = await Promise.all([
-    prisma.producto.create({
-      data: {
-        nombre: 'Hamburguesa Especial',
-        descripcion: 'Carne 1/4 lb, queso, bacon y papas.',
-        precio: 55.00,
-        categoriaId: categorias[1].categoriaId,
-      },
-    }),
-    prisma.producto.create({
-      data: {
-        nombre: 'Ensalada César',
-        descripcion: 'Clásica con pollo.',
-        precio: 35.00,
-        categoriaId: categorias[0].categoriaId,
-      },
-    }),
-    prisma.producto.create({
-      data: {
-        nombre: 'Limonada',
-        descripcion: 'Fresca y natural.',
-        precio: 10.00,
-        categoriaId: categorias[2].categoriaId,
-      },
-    }),
-  ]);
+  const fechaMP = new Date('2025-11-14T23:24:56.991Z');
 
-  // 5. Mesas de ejemplo
-  await Promise.all([
-    prisma.mesa.create({ data: { numero: 1, nombre: 'Mesa 1' } }),
-    prisma.mesa.create({ data: { numero: 2, nombre: 'Mesa 2' } }),
-    prisma.mesa.create({ data: { numero: 3, nombre: 'Mesa 3' } }),
-  ]);
+  await prisma.metodoPago.upsert({
+    where: { metodoPagoId: 1 },
+    update: {},
+    create: {
+      metodoPagoId: 1,
+      nombre: 'Tarjeta',
+      descripcion: null,
+      activo: true,
+      fechaSistema: fechaMP,
+    },
+  });
 
-  // 6. Métodos de pago
-  await Promise.all([
-    prisma.metodoPago.upsert({
-      where: { nombre: 'Efectivo' },
-      update: {},
-      create: { nombre: 'Efectivo' },
-    }),
-    prisma.metodoPago.upsert({
-      where: { nombre: 'Tarjeta' },
-      update: {},
-      create: { nombre: 'Tarjeta' },
-    }),
-    prisma.metodoPago.upsert({
-      where: { nombre: 'Transferencia' },
-      update: {},
-      create: { nombre: 'Transferencia' },
-    }),
-  ]);
+  await prisma.metodoPago.upsert({
+    where: { metodoPagoId: 2 },
+    update: {},
+    create: {
+      metodoPagoId: 2,
+      nombre: 'Efectivo',
+      descripcion: null,
+      activo: true,
+      fechaSistema: fechaMP,
+    },
+  });
 
-  console.log('🌱 Seed completado exitosamente.');
+  await prisma.metodoPago.upsert({
+    where: { metodoPagoId: 3 },
+    update: {},
+    create: {
+      metodoPagoId: 3,
+      nombre: 'Transferencia',
+      descripcion: null,
+      activo: true,
+      fechaSistema: fechaMP,
+    },
+  });
+
+  console.log('✅ Seed ejecutado con éxito.');
 }
 
 main()
-  .catch((e) => {
-    console.error('❌ Error ejecutando seed:', e);
+  .catch((err) => {
+    console.error('❌ Error ejecutando seed:', err);
     process.exit(1);
   })
   .finally(async () => {

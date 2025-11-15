@@ -28,23 +28,15 @@ services:
       - db
     ports:
       - '4000:4000'
+
+    # 👇 Aquí cargamos .env.production AUTOMÁTICAMENTE
+    env_file:
+      - .env.production
+
     environment:
       NODE_ENV: production
       TZ: America/Guatemala
-      DATABASE_URL: mysql://le_shuke_user:le_shuke_password@db:3306/le_shuke_db
-      
-      # -------------- VARIABLES DE ENTORNO QUE FALTAN 🚨 ---------------
-      JWT_SECRET: "super_secreto_para_firmar_tokens"
-      JWT_EXPIRES_IN: "7d"
-      BCRYPT_SALT: "10"
-
-      # Si usas cookies:
-      AUTH_COOKIE_NAME: "auth_token"
-      AUTH_COOKIE_EXPIRES: "7"
-      AUTH_COOKIE_SECURE: "false"
-      AUTH_COOKIE_SAME_SITE: "lax"
-      AUTH_COOKIE_PATH: "/"
-      # ------------------------------------------------------------------
+      # DATABASE_URL ya viene de .env.production — No repetirlo aquí
 
 volumes:
   le_shuke_db_data:
