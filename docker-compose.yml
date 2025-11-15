@@ -13,7 +13,6 @@ services:
       TZ: America/Guatemala
     ports:
       - '3307:3306'
-    # ❗IMPORTANTE: eliminamos --default-authentication-plugin (causa crash en MySQL 8.4)
     command: >
       --character-set-server=utf8mb4
       --collation-server=utf8mb4_unicode_ci
@@ -33,10 +32,19 @@ services:
       NODE_ENV: production
       TZ: America/Guatemala
       DATABASE_URL: mysql://le_shuke_user:le_shuke_password@db:3306/le_shuke_db
-      PORT: 4000
-    # Para ejecutar migraciones automáticamente descomenta esto:
-    # command: >
-    #   sh -c "npx prisma migrate deploy && npm run start"
+      
+      # -------------- VARIABLES DE ENTORNO QUE FALTAN 🚨 ---------------
+      JWT_SECRET: "super_secreto_para_firmar_tokens"
+      JWT_EXPIRES_IN: "7d"
+      BCRYPT_SALT: "10"
+
+      # Si usas cookies:
+      AUTH_COOKIE_NAME: "auth_token"
+      AUTH_COOKIE_EXPIRES: "7"
+      AUTH_COOKIE_SECURE: "false"
+      AUTH_COOKIE_SAME_SITE: "lax"
+      AUTH_COOKIE_PATH: "/"
+      # ------------------------------------------------------------------
 
 volumes:
   le_shuke_db_data:
