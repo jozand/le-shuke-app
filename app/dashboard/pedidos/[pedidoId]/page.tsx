@@ -1,3 +1,4 @@
+// app/dashboard/pedidos/[pedidoId]/page.tsx (ajusta la ruta según la tuya)
 'use client';
 
 import React, { useEffect, useMemo, useState } from 'react';
@@ -265,23 +266,93 @@ export default function PedidoPage() {
     }
   }
 
+  // 👇 AQUÍ CAMBIA: preguntamos método de pago y luego confirmamos
   async function handleFinalizarPedido() {
     if (!pedidoId) return;
+    if (detalles.length === 0) {
+      showToast({
+        type: 'warning',
+        title: 'Sin productos',
+        message: 'No puedes finalizar una comanda sin productos.',
+      });
+      return;
+    }
 
+    // 1) Seleccionar método de pago (simple con prompt de momento)
+    let metodoPagoId: number | null = null;
+    let descripcionMetodo = '';
+
+    try {
+      const input =
+        typeof window !== 'undefined'
+          ? window.prompt(
+            'Selecciona el método de pago:\n' +
+            '1) Efectivo\n' +
+            '2) Tarjeta\n' +
+            '3) Transferencia',
+            '1'
+          )
+          : null;
+
+      if (!input) {
+        showToast({
+          type: 'warning',
+          title: 'Método de pago',
+          message: 'Debes seleccionar un método de pago para continuar.',
+        });
+        return;
+      }
+
+      const opcion = Number(input);
+
+      switch (opcion) {
+        case 1:
+          metodoPagoId = 1;
+          descripcionMetodo = 'Efectivo';
+          break;
+        case 2:
+          metodoPagoId = 2;
+          descripcionMetodo = 'Tarjeta';
+          break;
+        case 3:
+          metodoPagoId = 3;
+          descripcionMetodo = 'Transferencia';
+          break;
+        default:
+          showToast({
+            type: 'warning',
+            title: 'Método inválido',
+            message:
+              'Opción de método de pago no válida. Usa 1 (Efectivo), 2 (Tarjeta) o 3 (Transferencia).',
+          });
+          return;
+      }
+    } catch {
+      // Si algo sale mal con prompt, abortamos
+      showToast({
+        type: 'error',
+        title: 'Error',
+        message: 'No se pudo seleccionar el método de pago.',
+      });
+      return;
+    }
+
+    if (!metodoPagoId) return;
+
+    // 2) Confirmar finalización con ese método de pago
     const confirmar = await new Promise<boolean>((resolve) => {
+      const msg = `¿Deseas finalizar esta comanda con método de pago: ${descripcionMetodo}? Ya no podrás agregar más productos.`;
+
       try {
         showToast({
           type: 'confirm',
           title: 'Finalizar pedido',
-          message:
-            '¿Deseas finalizar esta comanda? Ya no podrás agregar más productos.',
+          message: msg,
           onConfirm: () => resolve(true),
           onCancel: () => resolve(false),
         });
       } catch {
-        const ok = window.confirm(
-          '¿Deseas finalizar esta comanda? Ya no podrás agregar más productos.'
-        );
+        const ok = window.confirm(msg);
         resolve(ok);
       }
     });
@@ -290,12 +361,12 @@ export default function PedidoPage() {
 
     try {
       setFinalizando(true);
-      await finalizarPedido(pedidoId);
+      await finalizarPedido(pedidoId, metodoPagoId);
 
       showToast({
         type: 'success',
         title: 'Pedido finalizado',
-        message: 'La comanda se finalizó correctamente.',
+        message: `La comanda se finalizó correctamente con método de pago: ${descripcionMetodo}.`,
       });
 
       router.push('/dashboard/mesas');

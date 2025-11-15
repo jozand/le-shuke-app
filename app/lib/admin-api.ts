@@ -452,16 +452,102 @@ export async function eliminarDetallePedido(
  * Finaliza el pedido/comanda.
  * Endpoint sugerido: POST /api/pedidos/[pedidoId]/finalizar
  */
-export async function finalizarPedido(pedidoId: number) {
+export async function finalizarPedido(
+  pedidoId: number,
+  metodoPagoId: number
+): Promise<void> {
   const res = await fetch(`/api/pedidos/${pedidoId}/finalizar`, {
-    method: 'PUT', // o 'POST' si prefieres, con el handler de arriba igual funciona
+    method: 'PUT',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({ metodoPagoId }),
+  });
+
+  // Usamos tu helper genérico
+  await handleResponse<unknown>(res);
+}
+
+export interface DashboardKPIs {
+  totalPedidos: number;
+  totalVentas: number;
+  ticketPromedio: number;
+  pedidosAbiertos: number;
+  pedidosCerrados: number;
+  pedidosCancelados: number;
+}
+
+export interface DashboardVentaDia {
+  fecha: string;          // 'YYYY-MM-DD'
+  totalVentas: number;
+  totalPedidos: number;
+}
+
+export interface DashboardMetodoPago {
+  metodoPagoId: number;
+  nombre: string;
+  total: number;
+}
+
+export interface DashboardTopProducto {
+  productoId: number;
+  nombre: string;
+  cantidadVendida: number;
+  montoTotal: number;
+}
+
+export interface DashboardTopMesero {
+  usuarioId: number;
+  nombre: string;
+  totalVentas: number;
+  totalPedidos: number;
+}
+
+export interface DashboardResponse {
+  periodo: {
+    desde: string;
+    hasta: string;
+  };
+  filtros: {
+    esAdmin: boolean;
+    usuarioId: number | null;
+  };
+  kpis: DashboardKPIs;
+  ventasPorDia: DashboardVentaDia[];
+  ventasPorMetodoPago: DashboardMetodoPago[];
+  topProductos: DashboardTopProducto[];
+  topMeseros: DashboardTopMesero[];
+}
+
+export async function obtenerDashboard(
+  desde?: string,
+  hasta?: string,
+  rol?: string,
+  usuarioId?: number
+): Promise<DashboardResponse> {
+  const params = new URLSearchParams();
+  if (desde) params.append('desde', desde);
+  if (hasta) params.append('hasta', hasta);
+
+  const res = await fetch(`/api/dashboard?${params.toString()}`, {
+    method: 'GET',
+    headers: {
+      ...(rol ? { 'x-rol': rol } : {}),
+      ...(usuarioId ? { 'x-usuario-id': String(usuarioId) } : {}),
+    },
   });
 
   if (!res.ok) {
-    const body = await res.json().catch(() => null);
-    throw new Error(body?.mensaje || 'Error al finalizar pedido');
+    let mensaje = 'Error al obtener dashboard';
+    try {
+      const body = await res.json();
+      if (body?.mensaje) mensaje = body.mensaje;
+    } catch {
+      // ignore
+    }
+    throw new Error(mensaje);
   }
 
   const json = await res.json();
-  return json.data;
+  return json.data as DashboardResponse;
 }

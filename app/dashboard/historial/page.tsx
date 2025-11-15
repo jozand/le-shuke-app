@@ -559,8 +559,8 @@ export default function HistorialPage() {
           <p className="text-xs text-[var(--text-muted)]">
             {comandasFiltradas.length === 0
               ? 'Sin resultados para los filtros seleccionados.'
-              : `Mostrando ${comandasFiltradas.length
-              } comanda${comandasFiltradas.length === 1 ? '' : 's'}.`}
+              : `Mostrando ${comandasFiltradas.length} comanda${comandasFiltradas.length === 1 ? '' : 's'
+              }.`}
           </p>
         </div>
       </div>
@@ -602,12 +602,11 @@ export default function HistorialPage() {
           return (
             <div key={comanda.pedidoId} className="group">
               {/* Header del acordeón */}
-              <button
-                type="button"
+              <div
                 onClick={() => toggleExpand(comanda.pedidoId)}
                 className="
                   w-full px-4 py-3 flex items-center justify-between gap-3
-                  hover:bg-[var(--bg-hover)] transition-colors
+                  hover:bg-[var(--bg-hover)] transition-colors cursor-pointer
                 "
               >
                 <div className="flex items-center gap-3 text-left">
@@ -685,7 +684,7 @@ export default function HistorialPage() {
                     )}
                   </span>
                 </div>
-              </button>
+              </div>
 
               {/* Cuerpo del acordeón */}
               {isExpanded && (
