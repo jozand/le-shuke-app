@@ -27,7 +27,7 @@ type HistorialComandaDTO = {
   pedidoId: number;
   mesaNumero: number;
   mesaNombre: string | null;
-  fecha: string; // ISO string
+  fecha: string;
   usuarioNombre: string;
   total: number;
   estado: 'ABIERTA' | 'CERRADA' | 'CANCELADA' | string;
@@ -61,7 +61,6 @@ export default function HistorialPage() {
   useEffect(() => {
     cargarHistorial();
     cargarMesas();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   async function cargarHistorial() {
@@ -76,9 +75,7 @@ export default function HistorialPage() {
         try {
           const body = await res.json();
           if (body?.mensaje) mensaje = body.mensaje;
-        } catch {
-          /* ignore */
-        }
+        } catch { }
         throw new Error(mensaje);
       }
 
@@ -92,14 +89,11 @@ export default function HistorialPage() {
       });
 
       setComandas(data);
-
     } catch (err: unknown) {
-      console.error('Error cargando historial:', err);
-      if (err instanceof Error) {
-        setError(err.message);
-      } else {
-        setError('Error inesperado al cargar historial');
-      }
+      if (err instanceof Error) setError(err.message);
+      else setError('Error inesperado al cargar historial');
+    } finally {
+      setCargando(false);
     }
   }
 
@@ -108,19 +102,15 @@ export default function HistorialPage() {
       setCargandoMesas(true);
       const res = await fetch('/api/mesas');
 
-      if (!res.ok) {
-        console.error('Error cargando mesas para filtros');
-        return;
-      }
+      if (!res.ok) return;
 
       const json = await res.json();
       const data = (json.data || []) as MesaOption[];
 
       data.sort((a, b) => a.numero - b.numero);
       setMesas(data);
-
-    } catch (err: unknown) {
-      console.error('Error cargando mesas para filtros:', err);
+    } catch (err) {
+      console.error('Error mesas:', err);
     } finally {
       setCargandoMesas(false);
     }
@@ -140,7 +130,7 @@ export default function HistorialPage() {
 
   function formatearFecha(valor: string) {
     const d = new Date(valor);
-    if (Number.isNaN(d.getTime())) return valor;
+    if (isNaN(d.getTime())) return valor;
     return new Intl.DateTimeFormat('es-GT', {
       dateStyle: 'medium',
       timeStyle: 'short',
@@ -157,36 +147,29 @@ export default function HistorialPage() {
   function badgeEstado(estado: string) {
     const base =
       'inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium';
+
     switch (estado) {
       case 'CERRADA':
         return (
-          <span
-            className={`${base} bg-emerald-100/80 text-emerald-700 dark:bg-emerald-900/40 dark:text-emerald-300`}
-          >
+          <span className={`${base} bg-emerald-100 text-emerald-700`}>
             CERRADA
           </span>
         );
       case 'CANCELADA':
         return (
-          <span
-            className={`${base} bg-rose-100/80 text-rose-700 dark:bg-rose-900/40 dark:text-rose-300`}
-          >
+          <span className={`${base} bg-rose-100 text-rose-700`}>
             CANCELADA
           </span>
         );
       case 'ABIERTA':
         return (
-          <span
-            className={`${base} bg-amber-100/80 text-amber-700 dark:bg-amber-900/40 dark:text-amber-300`}
-          >
+          <span className={`${base} bg-amber-100 text-amber-700`}>
             ABIERTA
           </span>
         );
       default:
         return (
-          <span
-            className={`${base} bg-slate-100/80 text-slate-700 dark:bg-slate-800/60 dark:text-slate-200`}
-          >
+          <span className={`${base} bg-slate-200 text-slate-700`}>
             {estado}
           </span>
         );
@@ -196,27 +179,23 @@ export default function HistorialPage() {
   const comandasFiltradas = useMemo(() => {
     return comandas.filter((c) => {
       if (!esAdmin && usuario?.nombre) {
-        const nombreUsuario = usuario.nombre.toLowerCase().trim();
-        const nombreComanda = (c.usuarioNombre || '').toLowerCase().trim();
-        if (nombreComanda !== nombreUsuario) return false;
+        const u = usuario.nombre.toLowerCase().trim();
+        const cu = c.usuarioNombre.toLowerCase().trim();
+        if (u !== cu) return false;
       }
 
       if (fechaDesde && new Date(c.fecha) < new Date(fechaDesde)) return false;
-      if (fechaHasta &&
-        new Date(c.fecha) > new Date(fechaHasta + 'T23:59:59'))
+      if (
+        fechaHasta &&
+        new Date(c.fecha) > new Date(fechaHasta + 'T23:59:59')
+      )
         return false;
 
-      if (filtroMesa) {
-        const mesaStr = String(c.mesaNumero ?? '');
-        if (mesaStr !== filtroMesa) return false;
-      }
+      if (filtroMesa !== '' && String(c.mesaNumero) !== filtroMesa)
+        return false;
 
       if (filtroUsuario && esAdmin) {
-        if (
-          !c.usuarioNombre
-            .toLowerCase()
-            .includes(filtroUsuario.toLowerCase())
-        )
+        if (!c.usuarioNombre.toLowerCase().includes(filtroUsuario.toLowerCase()))
           return false;
       }
 
@@ -232,13 +211,259 @@ export default function HistorialPage() {
     usuario?.nombre,
   ]);
 
-  // imprimirComanda sin cambios...
+  // ============================
+  // IMPRIMIR COMANDA
+  // ============================
+  function imprimirComanda(c: HistorialComandaDTO) {
+    const contenido = `
+      Comanda #${c.pedidoId}
+      Mesa: ${c.mesaNumero}
+      Fecha: ${formatearFecha(c.fecha)}
+      Atendió: ${c.usuarioNombre}
 
-  // exportarExcel sin cambios...
+      Detalles:
+      ${c.detalles
+        .map((d) => `- ${d.productoNombre} x${d.cantidad} = ${formatearMoneda(d.subtotal)}`)
+        .join('\n')}
+
+      Total: ${formatearMoneda(c.total)}
+    `;
+
+    const ventana = window.open('', '_blank');
+    ventana?.document.write(`<pre>${contenido}</pre>`);
+    ventana?.print();
+    ventana?.close();
+  }
+
+  // ============================
+  // EXPORTAR A EXCEL
+  // ============================
+  function exportarExcel(c: HistorialComandaDTO) {
+    const filas = [
+      ['Producto', 'Cantidad', 'Precio', 'Subtotal'],
+      ...c.detalles.map((d) => [
+        d.productoNombre,
+        d.cantidad,
+        d.precioUnitario,
+        d.subtotal,
+      ]),
+    ];
+
+    const contenido = filas.map((f) => f.join(',')).join('\n');
+
+    const blob = new Blob([contenido], { type: 'text/csv' });
+    const url = URL.createObjectURL(blob);
+
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `comanda_${c.pedidoId}.csv`;
+    a.click();
+
+    URL.revokeObjectURL(url);
+  }
 
   return (
-    <>
-      {/* ... todo tu JSX intacto ... */}
-    </>
+    <section className="space-y-6">
+      {/* ================= ENCABEZADO ================= */}
+      <div className="flex items-center justify-between">
+        <div>
+          <h1 className="text-2xl font-bold">Historial de Comandas</h1>
+          <p className="text-sm text-[var(--text-secondary)]">
+            Filtra, revisa y exporta comandas anteriores.
+          </p>
+        </div>
+
+        <button
+          onClick={cargarHistorial}
+          disabled={cargando}
+          className="border px-3 py-1.5 rounded-md shadow text-sm
+                     bg-[var(--bg-card)] border-[var(--border-color)]
+                     hover:bg-[var(--bg-hover)]
+                     disabled:opacity-50 disabled:cursor-not-allowed"
+        >
+          {cargando ? (
+            <div className="flex items-center gap-2">
+              <Loader2 className="h-4 w-4 animate-spin" />
+              Cargando...
+            </div>
+          ) : (
+            'Actualizar'
+          )}
+        </button>
+      </div>
+
+      {/* ================== FILTROS =================== */}
+      <div className="border rounded-lg p-4 bg-[var(--bg-card)] grid gap-4 md:grid-cols-4">
+        {/* Fecha desde */}
+        <div>
+          <label className="text-xs font-medium flex items-center gap-1 mb-1">
+            <Calendar size={14} /> Desde
+          </label>
+          <input
+            type="date"
+            value={fechaDesde}
+            onChange={(e) => setFechaDesde(e.target.value)}
+            className="w-full px-2 py-1.5 rounded-md border bg-[var(--bg-elevated)]"
+          />
+        </div>
+
+        {/* Fecha hasta */}
+        <div>
+          <label className="text-xs font-medium flex items-center gap-1 mb-1">
+            <Calendar size={14} /> Hasta
+          </label>
+          <input
+            type="date"
+            value={fechaHasta}
+            onChange={(e) => setFechaHasta(e.target.value)}
+            className="w-full px-2 py-1.5 rounded-md border bg-[var(--bg-elevated)]"
+          />
+        </div>
+
+        {/* Mesa */}
+        <div>
+          <label className="text-xs font-medium mb-1 block">Mesa</label>
+          <select
+            className="w-full px-2 py-1.5 rounded-md border bg-[var(--bg-elevated)]"
+            value={filtroMesa}
+            onChange={(e) => setFiltroMesa(e.target.value)}
+          >
+            <option value="">Todas</option>
+            {mesas.map((m) => (
+              <option key={m.mesaId} value={String(m.numero)}>
+                {m.numero} {m.nombre ? `(${m.nombre})` : ''}
+              </option>
+            ))}
+          </select>
+        </div>
+
+        {/* Usuario */}
+        {esAdmin && (
+          <div>
+            <label className="text-xs font-medium mb-1 block flex items-center gap-1">
+              <Search size={14} /> Usuario
+            </label>
+            <input
+              type="text"
+              placeholder="Nombre..."
+              value={filtroUsuario}
+              onChange={(e) => setFiltroUsuario(e.target.value)}
+              className="w-full px-2 py-1.5 rounded-md border bg-[var(--bg-elevated)]"
+            />
+          </div>
+        )}
+      </div>
+
+      {/* BOTÓN LIMPIAR */}
+      <button
+        onClick={limpiarFiltros}
+        className="text-xs flex items-center gap-1 text-red-400 hover:text-red-300"
+      >
+        <XCircle size={14} /> Limpiar filtros
+      </button>
+
+      {/* ================= LISTADO ================= */}
+      <div className="space-y-3">
+        {comandasFiltradas.map((c) => {
+          const abierto = expandedId === c.pedidoId;
+
+          return (
+            <div
+              key={c.pedidoId}
+              className="border rounded-lg bg-[var(--bg-card)] shadow"
+            >
+              {/* Cabezera del acordeón */}
+              <button
+                className="w-full flex items-center justify-between p-3 text-left"
+                onClick={() => toggleExpand(c.pedidoId)}
+              >
+                <div>
+                  <p className="text-sm font-medium">
+                    Mesa {c.mesaNumero} — #{c.pedidoId}
+                  </p>
+                  <p className="text-xs text-[var(--text-secondary)]">
+                    {formatearFecha(c.fecha)} • {c.usuarioNombre}
+                  </p>
+                </div>
+
+                <div className="flex items-center gap-3">
+                  {badgeEstado(c.estado)}
+                  {abierto ? (
+                    <ChevronDown size={18} />
+                  ) : (
+                    <ChevronRight size={18} />
+                  )}
+                </div>
+              </button>
+
+              {/* Contenido */}
+              {abierto && (
+                <div className="p-4 border-t bg-[var(--bg-elevated)] space-y-4">
+                  {/* Tabla */}
+                  <div className="overflow-x-auto">
+                    <table className="w-full text-sm">
+                      <thead>
+                        <tr className="border-b text-[var(--text-main)]">
+                          <th className="pb-1">Producto</th>
+                          <th className="pb-1 text-center">Cant.</th>
+                          <th className="pb-1 text-right">Precio</th>
+                          <th className="pb-1 text-right">Subtotal</th>
+                        </tr>
+                      </thead>
+
+                      <tbody>
+                        {c.detalles.map((d) => (
+                          <tr
+                            key={d.pedidoDetalleId}
+                            className="border-b last:border-none"
+                          >
+                            <td>{d.productoNombre}</td>
+                            <td className="text-center">{d.cantidad}</td>
+                            <td className="text-right">
+                              {formatearMoneda(d.precioUnitario)}
+                            </td>
+                            <td className="text-right">
+                              {formatearMoneda(d.subtotal)}
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+
+                  {/* Total */}
+                  <p className="text-right font-semibold text-lg">
+                    Total: {formatearMoneda(c.total)}
+                  </p>
+
+                  {/* Acciones */}
+                  <div className="flex items-center justify-end gap-3">
+                    <button
+                      onClick={() => exportarExcel(c)}
+                      className="flex items-center gap-1 text-sm text-green-500 hover:text-green-400"
+                    >
+                      <FileDown size={16} /> Exportar Excel
+                    </button>
+
+                    <button
+                      onClick={() => imprimirComanda(c)}
+                      className="flex items-center gap-1 text-sm text-blue-400 hover:text-blue-300"
+                    >
+                      <Printer size={16} /> Imprimir
+                    </button>
+                  </div>
+                </div>
+              )}
+            </div>
+          );
+        })}
+
+        {comandasFiltradas.length === 0 && (
+          <p className="text-sm text-[var(--text-secondary)]">
+            No se encontraron resultados con los filtros seleccionados.
+          </p>
+        )}
+      </div>
+    </section>
   );
 }
