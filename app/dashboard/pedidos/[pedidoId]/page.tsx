@@ -1,4 +1,3 @@
-// app/dashboard/pedidos/[pedidoId]/page.tsx
 'use client';
 
 import React, { useEffect, useMemo, useState } from 'react';
@@ -48,9 +47,7 @@ export default function PedidoPage() {
   const [metodoPagoSeleccionadoId, setMetodoPagoSeleccionadoId] = useState<number | null>(null);
   const [cargandoMetodosPago, setCargandoMetodosPago] = useState(false);
 
-  // =============================
   // TOTAL
-  // =============================
   const total = useMemo(
     () =>
       detalles.reduce(
@@ -60,108 +57,77 @@ export default function PedidoPage() {
     [detalles]
   );
 
-  // =============================
-  // Cantidades
-  // =============================
-  function getCantidadCatalogo(productoId: number) {
-    return cantidadesCatalogo[productoId] ?? 1;
+  function getCantidadCatalogo(id: number) {
+    return cantidadesCatalogo[id] ?? 1;
   }
 
-  function cambiarCantidadCatalogo(productoId: number, delta: number) {
+  function cambiarCantidadCatalogo(id: number, delta: number) {
     setCantidadesCatalogo((prev) => {
-      const actual = prev[productoId] ?? 1;
-      const nueva = actual + delta;
-      if (nueva < 1) return { ...prev, [productoId]: 1 };
-      if (nueva > 99) return { ...prev, [productoId]: 99 };
-      return { ...prev, [productoId]: nueva };
+      const actual = prev[id] ?? 1;
+      const nuevo = Math.min(Math.max(actual + delta, 1), 99);
+      return { ...prev, [id]: nuevo };
     });
   }
 
-  function setCantidadCatalogoDirecto(productoId: number, valor: number) {
-    if (!Number.isFinite(valor) || valor <= 0) {
-      setCantidadesCatalogo((prev) => ({ ...prev, [productoId]: 1 }));
-      return;
-    }
+  function setCantidadCatalogoDirecto(id: number, valor: number) {
+    if (!Number.isFinite(valor) || valor < 1) valor = 1;
     setCantidadesCatalogo((prev) => ({
       ...prev,
-      [productoId]: Math.min(Math.max(Math.round(valor), 1), 99),
+      [id]: Math.min(Math.max(Math.round(valor), 1), 99),
     }));
   }
 
-  // =============================
-  // Cargar Catálogo
-  // =============================
+  // Cargar catálogo
   async function cargarCatalogo() {
     try {
       setCargandoCatalogo(true);
       const data = await obtenerCatalogoConProductos();
       setCatalogo(data);
-    } catch (err: unknown) {
-      const mensaje =
-        err instanceof Error ? err.message : 'Error al cargar catálogo de productos';
+    } catch (err) {
+      const msg =
+        err instanceof Error ? err.message : 'Error al cargar catálogo';
 
-      setError(mensaje);
-      showToast({
-        type: 'error',
-        title: 'Error',
-        message: mensaje,
-      });
+      setError(msg);
+      showToast({ type: 'error', title: 'Error', message: msg });
     } finally {
       setCargandoCatalogo(false);
     }
   }
 
-  // =============================
-  // Cargar Detalles
-  // =============================
+  // Cargar detalles
   async function cargarDetalles() {
     try {
       setCargandoDetalles(true);
       const data = await obtenerPedidoDetalle(pedidoId);
       setDetalles(data);
-    } catch (err: unknown) {
-      const mensaje =
+    } catch (err) {
+      const msg =
         err instanceof Error ? err.message : 'Error al cargar la comanda';
 
-      setError(mensaje);
-      showToast({
-        type: 'error',
-        title: 'Error',
-        message: mensaje,
-      });
+      setError(msg);
+      showToast({ type: 'error', title: 'Error', message: msg });
     } finally {
       setCargandoDetalles(false);
     }
   }
 
-  // =============================
-  // Cargar Métodos de pago
-  // =============================
+  // Cargar métodos de pago
   async function cargarMetodosPago() {
     try {
       setCargandoMetodosPago(true);
       const data = await obtenerMetodosPago();
       setMetodosPago(data);
-      if (data.length === 1) {
-        setMetodoPagoSeleccionadoId(data[0].metodoPagoId);
-      }
-    } catch (err: unknown) {
-      const mensaje =
-        err instanceof Error ? err.message : 'Error al cargar métodos de pago.';
+      if (data.length === 1) setMetodoPagoSeleccionadoId(data[0].metodoPagoId);
+    } catch (err) {
+      const msg =
+        err instanceof Error ? err.message : 'Error al cargar métodos de pago';
 
-      showToast({
-        type: 'error',
-        title: 'Error',
-        message: mensaje,
-      });
+      showToast({ type: 'error', title: 'Error', message: msg });
     } finally {
       setCargandoMetodosPago(false);
     }
   }
 
-  // =============================
-  // useEffect Inicial
-  // =============================
   useEffect(() => {
     if (!pedidoId || Number.isNaN(pedidoId)) return;
     setError(null);
@@ -170,9 +136,6 @@ export default function PedidoPage() {
     cargarMetodosPago();
   }, [pedidoId]);
 
-  // =============================
-  // Activar primera categoría
-  // =============================
   useEffect(() => {
     if (catalogo.length > 0 && categoriaActivaId === null) {
       setCategoriaActivaId(catalogo[0].categoriaId);
@@ -180,18 +143,17 @@ export default function PedidoPage() {
   }, [catalogo, categoriaActivaId]);
 
   // =============================
-  // Agregar Producto
+  // Agregar producto
   // =============================
-  async function handleAgregarProducto(productoId: number, nombreProducto: string, cantidad: number) {
+  async function handleAgregarProducto(productoId: number, nombre: string, cantidad: number) {
     if (!pedidoId) return;
 
     if (!Number.isFinite(cantidad) || cantidad <= 0) {
-      showToast({
+      return showToast({
         type: 'warning',
         title: 'Cantidad inválida',
         message: 'Ingresa una cantidad mayor a cero.',
       });
-      return;
     }
 
     try {
@@ -202,38 +164,32 @@ export default function PedidoPage() {
       showToast({
         type: 'success',
         title: 'Producto agregado',
-        message: `Se agregaron ${cantidad} unidad(es) de "${nombreProducto}" a la comanda.`,
+        message: `Se agregaron ${cantidad} unidad(es) de "${nombre}".`,
       });
-    } catch (err: unknown) {
-      const mensaje =
-        err instanceof Error ? err.message : 'No se pudo agregar el producto.';
-
-      showToast({
-        type: 'error',
-        title: 'Error',
-        message: mensaje,
-      });
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : 'No se pudo agregar el producto.';
+      showToast({ type: 'error', title: 'Error', message: msg });
     } finally {
       setProcesandoAccion(false);
     }
   }
 
   // =============================
-  // Cambiar Cantidad en detalle
+  // Cambiar cantidad detalle
   // =============================
   async function handleCambiarCantidad(detalle: PedidoDetalleDTO, nuevaCantidad: number) {
     if (nuevaCantidad <= 0) {
-      const confirmarEliminar = await new Promise<boolean>((resolve) => {
+      const confirmar = await new Promise<boolean>((resolve) => {
         showToast({
           type: 'confirm',
           title: 'Eliminar producto',
-          message: `La cantidad es 0. ¿Deseas eliminar "${detalle.nombreProducto}" de la comanda?`,
+          message: `¿Eliminar "${detalle.nombreProducto}"?`,
           onConfirm: () => resolve(true),
           onCancel: () => resolve(false),
         });
       });
 
-      if (!confirmarEliminar) return;
+      if (!confirmar) return;
       return handleEliminarDetalle(detalle);
     }
 
@@ -248,17 +204,11 @@ export default function PedidoPage() {
       showToast({
         type: 'success',
         title: 'Cantidad actualizada',
-        message: `Se actualizó la cantidad de "${detalle.nombreProducto}".`,
+        message: `Se actualizó "${detalle.nombreProducto}".`,
       });
-    } catch (err: unknown) {
-      const mensaje =
-        err instanceof Error ? err.message : 'No se pudo actualizar la cantidad.';
-
-      showToast({
-        type: 'error',
-        title: 'Error',
-        message: mensaje,
-      });
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : 'No se pudo actualizar.';
+      showToast({ type: 'error', title: 'Error', message: msg });
     } finally {
       setProcesandoAccion(false);
     }
@@ -272,7 +222,7 @@ export default function PedidoPage() {
       showToast({
         type: 'confirm',
         title: 'Eliminar producto',
-        message: `¿Deseas eliminar "${detalle.nombreProducto}" de la comanda?`,
+        message: `¿Eliminar "${detalle.nombreProducto}" de la comanda?`,
         onConfirm: () => resolve(true),
         onCancel: () => resolve(false),
       });
@@ -290,54 +240,43 @@ export default function PedidoPage() {
         title: 'Producto eliminado',
         message: `"${detalle.nombreProducto}" fue eliminado.`,
       });
-    } catch (err: unknown) {
-      const mensaje =
-        err instanceof Error ? err.message : 'No se pudo eliminar el producto.';
-
-      showToast({
-        type: 'error',
-        title: 'Error',
-        message: mensaje,
-      });
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : 'No se pudo eliminar.';
+      showToast({ type: 'error', title: 'Error', message: msg });
     } finally {
       setProcesandoAccion(false);
     }
   }
 
   // =============================
-  // Finalizar Pedido
+  // Finalizar
   // =============================
   async function handleFinalizarPedido() {
     if (!pedidoId) return;
 
     if (detalles.length === 0) {
-      showToast({
+      return showToast({
         type: 'warning',
         title: 'Sin productos',
         message: 'No puedes finalizar una comanda sin productos.',
       });
-      return;
     }
 
     if (!metodoPagoSeleccionadoId) {
-      showToast({
+      return showToast({
         type: 'warning',
         title: 'Método de pago',
-        message: 'Selecciona un método de pago antes de finalizar.',
+        message: 'Selecciona un método de pago.',
       });
-      return;
     }
 
-    const metodoSeleccionado = metodosPago.find(
-      (m) => m.metodoPagoId === metodoPagoSeleccionadoId
-    );
-    const descripcionMetodo = metodoSeleccionado?.nombre ?? 'Método de pago';
+    const metodo = metodosPago.find((m) => m.metodoPagoId === metodoPagoSeleccionadoId);
 
     const confirmar = await new Promise<boolean>((resolve) => {
       showToast({
         type: 'confirm',
         title: 'Finalizar pedido',
-        message: `¿Deseas finalizar con método: ${descripcionMetodo}? Ya no podrás agregar productos.`,
+        message: `¿Finalizar con: ${metodo?.nombre}?`,
         onConfirm: () => resolve(true),
         onCancel: () => resolve(false),
       });
@@ -352,19 +291,13 @@ export default function PedidoPage() {
       showToast({
         type: 'success',
         title: 'Pedido finalizado',
-        message: `La comanda se finalizó correctamente.`,
+        message: 'La comanda se finalizó correctamente.',
       });
 
       router.push('/dashboard/mesas');
-    } catch (err: unknown) {
-      const mensaje =
-        err instanceof Error ? err.message : 'No se pudo finalizar el pedido.';
-
-      showToast({
-        type: 'error',
-        title: 'Error',
-        message: mensaje,
-      });
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : 'No se pudo finalizar.';
+      showToast({ type: 'error', title: 'Error', message: msg });
     } finally {
       setFinalizando(false);
     }
@@ -382,28 +315,19 @@ export default function PedidoPage() {
   return (
     <section className="space-y-4 pb-10">
 
-      {/* ========================================================= */}
-      {/* ENCABEZADO RESPONSIVE */}
-      {/* ========================================================= */}
-      <div className="
-        flex flex-col sm:flex-row 
-        items-start sm:items-center 
-        justify-between gap-4
-      ">
-        {/* Botón volver + título */}
+      {/* ============ ENCABEZADO ============ */}
+      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
         <div className="flex items-center gap-3">
           <button
             type="button"
             onClick={() => router.push('/dashboard/mesas')}
             className="
               inline-flex items-center gap-2
-              rounded-[var(--radius-md)]
-              border border-[var(--border-color)]
+              rounded-[var(--radius-md)] border border-[var(--border-color)]
               bg-[var(--bg-elevated)] px-4 py-3
               text-sm text-[var(--text-main)]
-              hover:bg-[var(--bg-hover)]
-              active:scale-95 transition
-              touch-manipulation
+              hover:bg-[var(--bg-hover)] active:scale-95
+              transition
             "
             style={{ minHeight: 44 }}
           >
@@ -412,16 +336,15 @@ export default function PedidoPage() {
           </button>
 
           <div>
-            <h1 className="text-xl sm:text-2xl font-bold tracking-tight text-[var(--text-main)]">
+            <h1 className="text-xl sm:text-2xl font-bold text-[var(--text-main)]">
               Comanda #{pedidoId}
             </h1>
             <p className="mt-1 text-xs sm:text-sm text-[var(--text-secondary)]">
-              Toca, suma, resta y finaliza fácilmente en móvil o tablet.
+              Toca, suma, resta y finaliza fácilmente.
             </p>
           </div>
         </div>
 
-        {/* Botón finalizar */}
         <button
           type="button"
           onClick={handleFinalizarPedido}
@@ -444,26 +367,24 @@ export default function PedidoPage() {
         >
           {finalizando && <Loader2 className="h-4 w-4 animate-spin" />}
           <CheckCircle2 className="h-4 w-4" />
-          <span>Finalizar</span>
+          Finalizar
         </button>
       </div>
 
       {error && <p className="text-sm text-red-400">{error}</p>}
 
       {/* ========================================================= */}
-      {/* GRID: CATÁLOGO + COMANDA (la comanda viene en parte 3) */}
+      {/* GRID RESPONSIVO (CATÁLOGO + DETALLE) */}
       {/* ========================================================= */}
       <div className="grid gap-4 lg:grid-cols-[minmax(0,1.5fr)_minmax(0,1fr)]">
-
         {/* ========================================================= */}
         {/* CATÁLOGO */}
         {/* ========================================================= */}
         <div
           className="
-            rounded-[var(--radius-lg)] border
-            border-[var(--border-color)]
-            bg-[var(--bg-card)]
-            shadow-[var(--shadow-card)] p-4
+            rounded-[var(--radius-lg)] border border-[var(--border-color)]
+            bg-[var(--bg-card)] shadow-[var(--shadow-card)]
+            p-4
           "
         >
           <div className="flex items-center justify-between mb-3">
@@ -485,9 +406,7 @@ export default function PedidoPage() {
             </p>
           ) : (
             <>
-              {/* ------------------------------ */}
-              {/* TABS RESPONSIVOS DE CATEGORÍAS */}
-              {/* ------------------------------ */}
+              {/* -------- TABS DE CATEGORÍAS -------- */}
               <div className="mb-3 border-b border-[var(--border-color)]">
                 <div className="flex gap-2 overflow-x-auto pb-1 no-scrollbar">
                   {catalogo.map((cat) => {
@@ -499,9 +418,7 @@ export default function PedidoPage() {
                         onClick={() => setCategoriaActivaId(cat.categoriaId)}
                         className={`
                           relative inline-flex items-center whitespace-nowrap
-                          rounded-full px-3 py-1.5 text-xs font-medium
-                          border
-                          transition
+                          rounded-full px-3 py-1.5 text-xs font-medium border transition
                           ${activa
                             ? 'bg-emerald-500/10 border-emerald-500 text-emerald-400'
                             : 'bg-[var(--bg-elevated)] border-[var(--border-color)] text-[var(--text-secondary)] hover:bg-[var(--bg-hover)]'
@@ -515,18 +432,17 @@ export default function PedidoPage() {
                 </div>
               </div>
 
-              {/* ------------------------------ */}
-              {/* PRODUCTOS DE LA CATEGORÍA */}
-              {/* ------------------------------ */}
+              {/* -------- PRODUCTOS DE LA CATEGORÍA -------- */}
               <div className="max-h-[70vh] overflow-y-auto pr-1">
                 {categoriaActiva && categoriaActiva.productos.length > 0 ? (
-                  <div className="
-                    grid 
-                    grid-cols-1 
-                    sm:grid-cols-2 
-                    xl:grid-cols-3 
-                    gap-3
-                  ">
+                  <div
+                    className="
+                      grid grid-cols-1 
+                      sm:grid-cols-2 
+                      xl:grid-cols-3 
+                      gap-3
+                    "
+                  >
                     {categoriaActiva.productos.map((prod) => {
                       const cantidad = getCantidadCatalogo(prod.productoId);
 
@@ -534,16 +450,15 @@ export default function PedidoPage() {
                         <div
                           key={prod.productoId}
                           className="
-                            flex flex-col justify-between
+                            flex flex-col justify-between gap-2
                             rounded-[var(--radius-md)]
                             border border-[var(--border-color)]
-                            bg-[var(--bg-elevated)] 
+                            bg-[var(--bg-elevated)]
                             px-3 py-3
                             hover:bg-[var(--bg-hover)] transition
-                            gap-2
                           "
                         >
-                          {/* Nombre + precio */}
+                          {/* Nombre + descripción */}
                           <div className="flex w-full items-start justify-between gap-2">
                             <div>
                               <p className="text-sm font-semibold text-[var(--text-main)]">
@@ -551,30 +466,29 @@ export default function PedidoPage() {
                               </p>
 
                               {prod.descripcion && (
-                                <p className="
-                                  mt-1 text-[11px] 
-                                  text-[var(--text-muted)] 
-                                  line-clamp-3
-                                ">
+                                <p className="mt-1 text-[11px] text-[var(--text-muted)] line-clamp-3">
                                   {prod.descripcion}
                                 </p>
                               )}
                             </div>
 
-                            <span className="
-                              text-xs font-bold text-[var(--text-main)]
-                              whitespace-nowrap rounded-full 
-                              border border-[var(--border-color)] 
-                              px-2 py-1
-                            ">
+                            {/* Precio */}
+                            <span
+                              className="
+                                text-xs font-bold text-[var(--text-main)]
+                                whitespace-nowrap rounded-full
+                                border border-[var(--border-color)]
+                                px-2 py-1
+                              "
+                            >
                               Q {prod.precio.toFixed(2)}
                             </span>
                           </div>
 
-                          {/* Cantidad + Add */}
+                          {/* Cantidad + botón agregar */}
                           <div className="mt-1 flex flex-col gap-3">
 
-                            {/* Selector cantidad táctil */}
+                            {/* Selector táctil */}
                             <div
                               className="
                                 inline-flex items-center justify-between
@@ -586,21 +500,21 @@ export default function PedidoPage() {
                               {/* - */}
                               <button
                                 type="button"
-                                onClick={() => cambiarCantidadCatalogo(prod.productoId, -1)}
+                                onClick={() =>
+                                  cambiarCantidadCatalogo(prod.productoId, -1)
+                                }
                                 disabled={procesandoAccion}
                                 className="
-                                  flex items-center justify-center
-                                  rounded-full bg-[var(--bg-elevated)]
-                                  active:bg-[var(--bg-hover)]
+                                  flex items-center justify-center rounded-full 
+                                  bg-[var(--bg-elevated)] active:bg-[var(--bg-hover)]
                                   transition active:scale-95
-                                  touch-manipulation
                                 "
                                 style={{ width: 40, height: 40 }}
                               >
                                 <Minus className="h-5 w-5" />
                               </button>
 
-                              {/* INPUT cantidad */}
+                              {/* INPUT */}
                               <input
                                 type="number"
                                 inputMode="numeric"
@@ -609,28 +523,30 @@ export default function PedidoPage() {
                                 max={99}
                                 className="
                                   w-14 mx-1 text-center text-base
-                                  bg-transparent border-none
+                                  bg-transparent border-none 
                                   focus:outline-none appearance-none
-                                  touch-manipulation
                                 "
                                 style={{ fontSize: 16 }}
                                 value={cantidad}
                                 onChange={(e) =>
-                                  setCantidadCatalogoDirecto(prod.productoId, Number(e.target.value))
+                                  setCantidadCatalogoDirecto(
+                                    prod.productoId,
+                                    Number(e.target.value)
+                                  )
                                 }
                               />
 
                               {/* + */}
                               <button
                                 type="button"
-                                onClick={() => cambiarCantidadCatalogo(prod.productoId, 1)}
+                                onClick={() =>
+                                  cambiarCantidadCatalogo(prod.productoId, 1)
+                                }
                                 disabled={procesandoAccion}
                                 className="
-                                  flex items-center justify-center
-                                  rounded-full bg-[var(--bg-elevated)]
-                                  active:bg-[var(--bg-hover)]
+                                  flex items-center justify-center rounded-full 
+                                  bg-[var(--bg-elevated)] active:bg-[var(--bg-hover)]
                                   transition active:scale-95
-                                  touch-manipulation
                                 "
                                 style={{ width: 40, height: 40 }}
                               >
@@ -638,7 +554,7 @@ export default function PedidoPage() {
                               </button>
                             </div>
 
-                            {/* BOTÓN AGREGAR */}
+                            {/* Botón agregar */}
                             <button
                               type="button"
                               disabled={procesandoAccion}
@@ -656,13 +572,12 @@ export default function PedidoPage() {
                                 text-xs font-semibold text-white
                                 hover:bg-emerald-600
                                 disabled:opacity-55 disabled:cursor-not-allowed
-                                active:scale-[0.97] 
-                                transition
+                                active:scale-[0.97] transition
                                 w-full sm:w-auto sm:self-end
                               "
                             >
                               <Plus className="h-4 w-4 mr-1" />
-                              <span>Agregar</span>
+                              Agregar
                             </button>
                           </div>
                         </div>
@@ -678,14 +593,15 @@ export default function PedidoPage() {
             </>
           )}
         </div>
+
         {/* ========================================================= */}
-        {/* COMANDA */}
+        {/* DETALLE DE LA COMANDA — MODO RESPONSIVE (TABLE + CARDS) */}
         {/* ========================================================= */}
         <div
           className="
-            rounded-[var(--radius-lg)] border
-            border-[var(--border-color)] bg-[var(--bg-card)]
-            shadow-[var(--shadow-card)] p-4
+            rounded-[var(--radius-lg)] border border-[var(--border-color)]
+            bg-[var(--bg-card)] shadow-[var(--shadow-card)]
+            p-4
           "
         >
           <div className="flex items-center justify-between mb-3">
@@ -707,35 +623,123 @@ export default function PedidoPage() {
               Aún no has agregado productos.
             </p>
           ) : (
-            <div className="space-y-4">
+            <div className="space-y-5">
 
-              {/* ------------------------------ */}
-              {/* TABLA RESPONSIVA */}
-              {/* ------------------------------ */}
-              <div className="
-                max-h-[50vh] 
-                overflow-y-auto 
-                border border-[var(--border-color)] 
-                rounded-[var(--radius-md)]
-              ">
+              {/* -------- CARDS PARA MÓVIL -------- */}
+              <div className="md:hidden space-y-3">
+                {detalles.map((d) => (
+                  <div
+                    key={d.pedidoDetalleId}
+                    className="
+                      rounded-[var(--radius-md)] border border-[var(--border-color)]
+                      bg-[var(--bg-elevated)] p-3 flex flex-col gap-3
+                    "
+                  >
+                    <div className="flex justify-between">
+                      <div>
+                        <p className="text-sm font-semibold">{d.nombreProducto}</p>
+                        {d.categoriaNombre && (
+                          <p className="text-[11px] text-[var(--text-muted)]">
+                            {d.categoriaNombre}
+                          </p>
+                        )}
+                      </div>
+
+                      <p className="font-semibold">
+                        Q {(d.subtotal ?? d.cantidad * d.precioUnitario).toFixed(2)}
+                      </p>
+                    </div>
+
+                    {/* Cantidad táctil */}
+                    <div className="flex items-center justify-between">
+                      <span className="text-xs text-[var(--text-secondary)]">
+                        Cantidad
+                      </span>
+
+                      <div
+                        className="
+                          inline-flex items-center justify-center gap-1
+                          rounded-full border border-[var(--border-color)]
+                          bg-[var(--bg-elevated)] px-2 py-1
+                        "
+                      >
+                        {/* - */}
+                        <button
+                          onClick={() =>
+                            handleCambiarCantidad(d, d.cantidad - 1)
+                          }
+                          disabled={procesandoAccion}
+                          className="
+                            flex items-center justify-center rounded-full 
+                            bg-[var(--bg-elevated)]
+                            active:bg-[var(--bg-hover)]
+                            transition active:scale-95
+                          "
+                          style={{ width: 34, height: 34 }}
+                        >
+                          <Minus className="h-4 w-4" />
+                        </button>
+
+                        {/* Cantidad */}
+                        <span className="w-8 text-center font-semibold">
+                          {d.cantidad}
+                        </span>
+
+                        {/* + */}
+                        <button
+                          onClick={() =>
+                            handleCambiarCantidad(d, d.cantidad + 1)
+                          }
+                          disabled={procesandoAccion}
+                          className="
+                            flex items-center justify-center rounded-full 
+                            bg-[var(--bg-elevated)]
+                            active:bg-[var(--bg-hover)]
+                            transition active:scale-95
+                          "
+                          style={{ width: 34, height: 34 }}
+                        >
+                          <Plus className="h-4 w-4" />
+                        </button>
+                      </div>
+                    </div>
+
+                    {/* Eliminar */}
+                    <button
+                      onClick={() => handleEliminarDetalle(d)}
+                      disabled={procesandoAccion}
+                      className="
+                        flex items-center justify-center gap-2
+                        rounded-[var(--radius-md)]
+                        text-red-400 bg-[var(--bg-elevated)]
+                        active:bg-red-500/10
+                        px-3 py-2 transition active:scale-95
+                      "
+                    >
+                      <Trash2 className="h-4 w-4" />
+                      Eliminar
+                    </button>
+                  </div>
+                ))}
+              </div>
+
+              {/* -------- TABLA PARA TABLET / DESKTOP -------- */}
+              <div
+                className="
+                  hidden md:block
+                  max-h-[50vh] overflow-y-auto
+                  border border-[var(--border-color)]
+                  rounded-[var(--radius-md)]
+                "
+              >
                 <table className="min-w-full text-xs">
                   <thead className="bg-[var(--bg-elevated)] sticky top-0 z-10">
                     <tr>
-                      <th className="px-2 py-2 text-left font-semibold text-[var(--text-secondary)]">
-                        Producto
-                      </th>
-                      <th className="px-2 py-2 text-center font-semibold text-[var(--text-secondary)]">
-                        Cant.
-                      </th>
-                      <th className="px-2 py-2 text-right font-semibold text-[var(--text-secondary)]">
-                        P. Unit.
-                      </th>
-                      <th className="px-2 py-2 text-right font-semibold text-[var(--text-secondary)]">
-                        Subtotal
-                      </th>
-                      <th className="px-2 py-2 text-center font-semibold text-[var(--text-secondary)]">
-                        Acciones
-                      </th>
+                      <th className="px-2 py-2 text-left font-semibold">Producto</th>
+                      <th className="px-2 py-2 text-center font-semibold">Cant.</th>
+                      <th className="px-2 py-2 text-right font-semibold">P. Unit.</th>
+                      <th className="px-2 py-2 text-right font-semibold">Subtotal</th>
+                      <th className="px-2 py-2 text-center font-semibold">Acciones</th>
                     </tr>
                   </thead>
 
@@ -747,10 +751,7 @@ export default function PedidoPage() {
                       >
                         {/* PRODUCTO */}
                         <td className="px-2 py-2 align-top">
-                          <p className="font-medium text-[var(--text-main)]">
-                            {d.nombreProducto}
-                          </p>
-
+                          <p className="font-medium">{d.nombreProducto}</p>
                           {d.categoriaNombre && (
                             <p className="text-[11px] text-[var(--text-muted)]">
                               {d.categoriaNombre}
@@ -758,25 +759,26 @@ export default function PedidoPage() {
                           )}
                         </td>
 
-                        {/* CANTIDAD (TOUCH FRIENDLY) */}
+                        {/* CANTIDAD */}
                         <td className="px-2 py-2 align-middle text-center">
-                          <div className="
-                            inline-flex items-center justify-center gap-1
-                            rounded-full border border-[var(--border-color)]
-                            bg-[var(--bg-elevated)] px-2 py-1
-                            touch-manipulation
-                          ">
+                          <div
+                            className="
+                              inline-flex items-center justify-center gap-1
+                              rounded-full border border-[var(--border-color)]
+                              bg-[var(--bg-elevated)] px-2 py-1
+                            "
+                          >
                             {/* - */}
                             <button
-                              type="button"
-                              onClick={() => handleCambiarCantidad(d, d.cantidad - 1)}
+                              onClick={() =>
+                                handleCambiarCantidad(d, d.cantidad - 1)
+                              }
                               disabled={procesandoAccion}
                               className="
-                                flex items-center justify-center
-                                rounded-full bg-[var(--bg-elevated)]
+                                flex items-center justify-center rounded-full 
+                                bg-[var(--bg-elevated)]
                                 active:bg-[var(--bg-hover)]
                                 transition active:scale-95
-                                touch-manipulation
                               "
                               style={{ width: 36, height: 36 }}
                             >
@@ -790,15 +792,15 @@ export default function PedidoPage() {
 
                             {/* + */}
                             <button
-                              type="button"
-                              onClick={() => handleCambiarCantidad(d, d.cantidad + 1)}
+                              onClick={() =>
+                                handleCambiarCantidad(d, d.cantidad + 1)
+                              }
                               disabled={procesandoAccion}
                               className="
-                                flex items-center justify-center
-                                rounded-full bg-[var(--bg-elevated)]
+                                flex items-center justify-center rounded-full 
+                                bg-[var(--bg-elevated)]
                                 active:bg-[var(--bg-hover)]
                                 transition active:scale-95
-                                touch-manipulation
                               "
                               style={{ width: 36, height: 36 }}
                             >
@@ -807,23 +809,19 @@ export default function PedidoPage() {
                           </div>
                         </td>
 
-                        {/* PRECIO UNITARIO */}
-                        <td className="px-2 py-2 align-middle text-right">
+                        {/* PRECIO */}
+                        <td className="px-2 py-2 text-right">
                           Q {d.precioUnitario.toFixed(2)}
                         </td>
 
                         {/* SUBTOTAL */}
-                        <td className="px-2 py-2 align-middle text-right">
-                          Q {(
-                            d.subtotal ??
-                            d.cantidad * d.precioUnitario
-                          ).toFixed(2)}
+                        <td className="px-2 py-2 text-right">
+                          Q {(d.subtotal ?? d.cantidad * d.precioUnitario).toFixed(2)}
                         </td>
 
-                        {/* ACCIONES */}
-                        <td className="px-2 py-2 align-middle text-center">
+                        {/* ACCION */}
+                        <td className="px-2 py-2 text-center">
                           <button
-                            type="button"
                             onClick={() => handleEliminarDetalle(d)}
                             disabled={procesandoAccion}
                             className="
@@ -831,14 +829,11 @@ export default function PedidoPage() {
                               rounded-[var(--radius-md)]
                               text-red-400 bg-[var(--bg-elevated)]
                               active:bg-red-500/10
-                              px-3 py-2
-                              transition active:scale-95
-                              touch-manipulation
+                              px-3 py-2 transition active:scale-95
                             "
                             style={{ minHeight: 44 }}
                           >
                             <Trash2 className="h-5 w-5" />
-                            <span className="text-[12px] font-medium sm:hidden">Quitar</span>
                           </button>
                         </td>
                       </tr>
@@ -847,9 +842,7 @@ export default function PedidoPage() {
                 </table>
               </div>
 
-              {/* ------------------------------ */}
-              {/* MÉTODO DE PAGO */}
-              {/* ------------------------------ */}
+              {/* -------- MÉTODO DE PAGO -------- */}
               <div className="space-y-2">
                 <div className="flex items-center justify-between">
                   <span className="text-sm font-medium text-[var(--text-secondary)]">
@@ -864,48 +857,39 @@ export default function PedidoPage() {
                   )}
                 </div>
 
-                {metodosPago.length === 0 ? (
-                  <p className="text-xs text-[var(--text-muted)]">
-                    No hay métodos configurados.
-                  </p>
-                ) : (
-                  <div className="flex flex-wrap gap-2">
-                    {metodosPago.map((m) => (
-                      <label
-                        key={m.metodoPagoId}
-                        className={`
-                          inline-flex items-center gap-2 rounded-full border px-3 py-1.5 text-xs cursor-pointer
-                          ${metodoPagoSeleccionadoId === m.metodoPagoId
-                            ? 'border-emerald-500 bg-emerald-500/10 text-emerald-300'
-                            : 'border-[var(--border-color)] bg-[var(--bg-elevated)] text-[var(--text-secondary)] hover:bg-[var(--bg-hover)]'
-                          }
-                          transition
-                        `}
-                      >
-                        <input
-                          type="radio"
-                          name="metodoPago"
-                          value={m.metodoPagoId}
-                          className="h-3 w-3"
-                          checked={metodoPagoSeleccionadoId === m.metodoPagoId}
-                          onChange={() => setMetodoPagoSeleccionadoId(m.metodoPagoId)}
-                        />
-                        <span className="font-medium">{m.nombre}</span>
+                {/* Botones responsivos */}
+                <div className="flex flex-wrap gap-2">
+                  {metodosPago.map((m) => (
+                    <label
+                      key={m.metodoPagoId}
+                      className={`
+                        inline-flex items-center gap-2 rounded-full border px-3 py-1.5 text-xs cursor-pointer transition
+                        ${metodoPagoSeleccionadoId === m.metodoPagoId
+                          ? 'border-emerald-500 bg-emerald-500/10 text-emerald-300'
+                          : 'border-[var(--border-color)] bg-[var(--bg-elevated)] text-[var(--text-secondary)] hover:bg-[var(--bg-hover)]'
+                        }
+                      `}
+                    >
+                      <input
+                        type="radio"
+                        name="metodoPago"
+                        className="h-3 w-3"
+                        checked={metodoPagoSeleccionadoId === m.metodoPagoId}
+                        onChange={() => setMetodoPagoSeleccionadoId(m.metodoPagoId)}
+                      />
+                      <span className="font-medium">{m.nombre}</span>
 
-                        {m.descripcion && (
-                          <span className="text-[10px] text-[var(--text-muted)]">
-                            {m.descripcion}
-                          </span>
-                        )}
-                      </label>
-                    ))}
-                  </div>
-                )}
+                      {m.descripcion && (
+                        <span className="text-[10px] text-[var(--text-muted)]">
+                          {m.descripcion}
+                        </span>
+                      )}
+                    </label>
+                  ))}
+                </div>
               </div>
 
-              {/* ------------------------------ */}
-              {/* TOTAL */}
-              {/* ------------------------------ */}
+              {/* -------- TOTAL -------- */}
               <div className="flex items-center justify-between pt-2">
                 <span className="text-sm font-medium text-[var(--text-secondary)]">
                   Total
