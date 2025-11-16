@@ -28,7 +28,9 @@ export default function MesasTab() {
 
   const { showToast } = useToast();
 
+  // ===============================
   // Cargar mesas al inicio
+  // ===============================
   useEffect(() => {
     const cargar = async () => {
       try {
@@ -36,8 +38,9 @@ export default function MesasTab() {
         setError(null);
         const data = await obtenerMesas();
         setMesas(data);
-      } catch (err: any) {
-        const mensaje = err?.message || 'Error al cargar mesas';
+      } catch (err: unknown) {
+        const mensaje =
+          err instanceof Error ? err.message : 'Error al cargar mesas';
         setError(mensaje);
         showToast({
           type: 'error',
@@ -71,6 +74,9 @@ export default function MesasTab() {
     }
   };
 
+  // ===============================
+  // Crear / Actualizar
+  // ===============================
   const onSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
@@ -118,8 +124,9 @@ export default function MesasTab() {
       }
 
       limpiarForm();
-    } catch (err: any) {
-      const mensaje = err?.message || 'Error al guardar la mesa';
+    } catch (err: unknown) {
+      const mensaje =
+        err instanceof Error ? err.message : 'Error al guardar la mesa';
       setError(mensaje);
       showToast({
         type: 'error',
@@ -130,6 +137,9 @@ export default function MesasTab() {
     }
   };
 
+  // ===============================
+  // Editar
+  // ===============================
   const onEditar = (mesa: MesaDTO) => {
     setEditandoId(mesa.mesaId);
     setForm({
@@ -145,8 +155,10 @@ export default function MesasTab() {
     });
   };
 
+  // ===============================
+  // Eliminar (desactivar)
+  // ===============================
   const onEliminar = (mesa: MesaDTO) => {
-    // 🔥 Usamos el toast de confirm en lugar de window.confirm
     showToast({
       type: 'confirm',
       message: `¿Deseas desactivar la mesa ${mesa.numero}?`,
@@ -166,8 +178,9 @@ export default function MesasTab() {
             type: 'success',
             message: `La mesa ${mesa.numero} fue desactivada correctamente.`,
           });
-        } catch (err: any) {
-          const mensaje = err?.message || 'Error al eliminar mesa';
+        } catch (err: unknown) {
+          const mensaje =
+            err instanceof Error ? err.message : 'Error al eliminar mesa';
           setError(mensaje);
           showToast({
             type: 'error',
@@ -178,7 +191,6 @@ export default function MesasTab() {
         }
       },
       onCancel: () => {
-        // Opcional, solo feedback
         showToast({
           type: 'info',
           message: 'Acción cancelada. No se realizaron cambios.',
@@ -189,7 +201,9 @@ export default function MesasTab() {
 
   return (
     <div className="space-y-4">
-      {/* Formulario */}
+      {/* ===============================
+          FORMULARIO
+      =============================== */}
       <form
         onSubmit={onSubmit}
         className="
@@ -303,106 +317,195 @@ export default function MesasTab() {
         </div>
       </form>
 
-      {/* Mensaje inline (además del toast) */}
+      {/* ===============================
+          ERROR INLINE
+      =============================== */}
       {error && (
         <div className="rounded-[var(--radius-md)] border border-red-500/60 bg-red-500/10 px-3 py-2 text-xs text-red-200">
           {error}
         </div>
       )}
 
-      {/* Tabla */}
-      <div className="overflow-x-auto rounded-[var(--radius-lg)] border border-[var(--border-color)]">
-        <table className="min-w-full text-sm">
-          <thead className="bg-[var(--bg-main)]/60">
-            <tr className="text-left text-xs uppercase text-[var(--text-secondary)]">
-              <th className="px-3 py-2">#</th>
-              <th className="px-3 py-2">Nombre</th>
-              <th className="px-3 py-2 text-center">Capacidad</th>
-              <th className="px-3 py-2 text-center">Estado</th>
-              <th className="px-3 py-2 text-right">Acciones</th>
-            </tr>
-          </thead>
-          <tbody>
-            {mesas.length === 0 && !cargando && (
-              <tr>
-                <td
-                  colSpan={5}
-                  className="px-3 py-4 text-center text-xs text-[var(--text-secondary)]"
-                >
-                  No hay mesas registradas.
-                </td>
-              </tr>
-            )}
+      {/* ===============================
+          LISTA / TABLA RESPONSIVE
+      =============================== */}
 
-            {mesas.map((mesa) => (
-              <tr
-                key={mesa.mesaId}
-                className="border-t border-[var(--border-color)] text-[var(--text-main)]"
+      {/* MÓVIL: Cards */}
+      <div className="space-y-2 md:hidden">
+        {cargando && (
+          <div className="flex items-center justify-center rounded-[var(--radius-md)] border border-[var(--border-color)] bg-[var(--bg-main)]/40 px-3 py-3 text-xs text-[var(--text-secondary)]">
+            <Loader2 className="mr-2 h-3 w-3 animate-spin" />
+            Cargando mesas...
+          </div>
+        )}
+
+        {!cargando && mesas.length === 0 && (
+          <div className="rounded-[var(--radius-md)] border border-[var(--border-color)] bg-[var(--bg-main)]/40 px-3 py-3 text-xs text-[var(--text-secondary)] text-center">
+            No hay mesas registradas.
+          </div>
+        )}
+
+        {mesas.map((mesa) => (
+          <div
+            key={mesa.mesaId}
+            className="
+              rounded-[var(--radius-md)] border border-[var(--border-color)]
+              bg-[var(--bg-card)] px-3 py-2 text-xs
+              flex flex-col gap-2
+            "
+          >
+            <div className="flex items-start justify-between gap-2">
+              <div>
+                <p className="font-semibold text-[var(--text-main)]">
+                  Mesa {mesa.numero}
+                </p>
+                <p className="mt-0.5 text-[11px] text-[var(--text-secondary)]">
+                  {mesa.nombre || 'Sin alias'}
+                </p>
+                <p className="mt-0.5 text-[11px] text-[var(--text-secondary)]">
+                  Capacidad:{' '}
+                  {mesa.capacidad != null ? mesa.capacidad : 'No definida'}
+                </p>
+              </div>
+
+              <div className="shrink-0">
+                {mesa.activa ? (
+                  <span className="inline-flex items-center gap-1 rounded-full bg-emerald-500/10 px-2 py-0.5 text-[10px] font-semibold text-emerald-300">
+                    <Check className="h-3 w-3" />
+                    Activa
+                  </span>
+                ) : (
+                  <span className="inline-flex items-center gap-1 rounded-full bg-zinc-500/10 px-2 py-0.5 text-[10px] font-semibold text-zinc-300">
+                    Inactiva
+                  </span>
+                )}
+              </div>
+            </div>
+
+            <div className="flex items-center justify-end gap-2">
+              <button
+                onClick={() => onEditar(mesa)}
+                className="
+                  inline-flex items-center gap-1 rounded-full bg-[var(--bg-main)]
+                  px-2 py-1 text-[11px] text-[var(--text-secondary)]
+                  hover:bg-[var(--accent-primary)] hover:text-white
+                "
               >
-                <td className="px-3 py-2">{mesa.numero}</td>
-                <td className="px-3 py-2">
-                  {mesa.nombre || (
-                    <span className="text-[var(--text-secondary)]">—</span>
-                  )}
-                </td>
-                <td className="px-3 py-2 text-center">
-                  {mesa.capacidad ?? (
-                    <span className="text-[var(--text-secondary)]">—</span>
-                  )}
-                </td>
-                <td className="px-3 py-2 text-center">
-                  {mesa.activa ? (
-                    <span className="inline-flex items-center gap-1 rounded-full bg-emerald-500/10 px-2 py-0.5 text-[10px] font-semibold text-emerald-300">
-                      <Check className="h-3 w-3" />
-                      Activa
-                    </span>
-                  ) : (
-                    <span className="inline-flex items-center gap-1 rounded-full bg-zinc-500/10 px-2 py-0.5 text-[10px] font-semibold text-zinc-300">
-                      Inactiva
-                    </span>
-                  )}
-                </td>
-                <td className="px-3 py-2 text-right">
-                  <div className="inline-flex items-center gap-2">
-                    <button
-                      onClick={() => onEditar(mesa)}
-                      className="
-                        inline-flex items-center rounded-full bg-[var(--bg-main)]
-                        p-1.5 text-[var(--text-secondary)]
-                        hover:bg-[var(--accent-primary)] hover:text-white
-                      "
-                      title="Editar mesa"
-                    >
-                      <Pencil className="h-3 w-3" />
-                    </button>
-                    <button
-                      onClick={() => onEliminar(mesa)}
-                      className="
-                        inline-flex items-center rounded-full bg-[var(--bg-main)]
-                        p-1.5 text-red-300 hover:bg-red-500 hover:text-white
-                      "
-                      title="Desactivar mesa"
-                    >
-                      <Trash2 className="h-3 w-3" />
-                    </button>
-                  </div>
-                </td>
-              </tr>
-            ))}
+                <Pencil className="h-3 w-3" />
+                Editar
+              </button>
 
-            {cargando && (
-              <tr>
-                <td
-                  colSpan={5}
-                  className="px-3 py-3 text-center text-xs text-[var(--text-secondary)]"
-                >
-                  <Loader2 className="mr-2 inline h-3 w-3 animate-spin" />
-                  Cargando...
-                </td>
+              <button
+                onClick={() => onEliminar(mesa)}
+                className="
+                  inline-flex items-center gap-1 rounded-full bg-[var(--bg-main)]
+                  px-2 py-1 text-[11px] text-red-300
+                  hover:bg-red-500 hover:text-white
+                "
+              >
+                <Trash2 className="h-3 w-3" />
+                Desactivar
+              </button>
+            </div>
+          </div>
+        ))}
+      </div>
+
+      {/* TABLET / DESKTOP: Tabla clásica */}
+      <div className="hidden md:block">
+        <div className="overflow-x-auto rounded-[var(--radius-lg)] border border-[var(--border-color)]">
+          <table className="min-w-full text-sm">
+            <thead className="bg-[var(--bg-main)]/60">
+              <tr className="text-left text-xs uppercase text-[var(--text-secondary)]">
+                <th className="px-3 py-2">#</th>
+                <th className="px-3 py-2">Nombre</th>
+                <th className="px-3 py-2 text-center">Capacidad</th>
+                <th className="px-3 py-2 text-center">Estado</th>
+                <th className="px-3 py-2 text-right">Acciones</th>
               </tr>
-            )}
-          </tbody>
-        </table>
+            </thead>
+            <tbody>
+              {mesas.length === 0 && !cargando && (
+                <tr>
+                  <td
+                    colSpan={5}
+                    className="px-3 py-4 text-center text-xs text-[var(--text-secondary)]"
+                  >
+                    No hay mesas registradas.
+                  </td>
+                </tr>
+              )}
+
+              {mesas.map((mesa) => (
+                <tr
+                  key={mesa.mesaId}
+                  className="border-t border-[var(--border-color)] text-[var(--text-main)]"
+                >
+                  <td className="px-3 py-2">{mesa.numero}</td>
+                  <td className="px-3 py-2">
+                    {mesa.nombre || (
+                      <span className="text-[var(--text-secondary)]">—</span>
+                    )}
+                  </td>
+                  <td className="px-3 py-2 text-center">
+                    {mesa.capacidad ?? (
+                      <span className="text-[var(--text-secondary)]">—</span>
+                    )}
+                  </td>
+                  <td className="px-3 py-2 text-center">
+                    {mesa.activa ? (
+                      <span className="inline-flex items-center gap-1 rounded-full bg-emerald-500/10 px-2 py-0.5 text-[10px] font-semibold text-emerald-300">
+                        <Check className="h-3 w-3" />
+                        Activa
+                      </span>
+                    ) : (
+                      <span className="inline-flex items-center gap-1 rounded-full bg-zinc-500/10 px-2 py-0.5 text-[10px] font-semibold text-zinc-300">
+                        Inactiva
+                      </span>
+                    )}
+                  </td>
+                  <td className="px-3 py-2 text-right">
+                    <div className="inline-flex items-center gap-2">
+                      <button
+                        onClick={() => onEditar(mesa)}
+                        className="
+                          inline-flex items-center rounded-full bg-[var(--bg-main)]
+                          p-1.5 text-[var(--text-secondary)]
+                          hover:bg-[var(--accent-primary)] hover:text-white
+                        "
+                        title="Editar mesa"
+                      >
+                        <Pencil className="h-3 w-3" />
+                      </button>
+                      <button
+                        onClick={() => onEliminar(mesa)}
+                        className="
+                          inline-flex items-center rounded-full bg-[var(--bg-main)]
+                          p-1.5 text-red-300 hover:bg-red-500 hover:text-white
+                        "
+                        title="Desactivar mesa"
+                      >
+                        <Trash2 className="h-3 w-3" />
+                      </button>
+                    </div>
+                  </td>
+                </tr>
+              ))}
+
+              {cargando && (
+                <tr>
+                  <td
+                    colSpan={5}
+                    className="px-3 py-3 text-center text-xs text-[var(--text-secondary)]"
+                  >
+                    <Loader2 className="mr-2 inline h-3 w-3 animate-spin" />
+                    Cargando...
+                  </td>
+                </tr>
+              )}
+            </tbody>
+          </table>
+        </div>
       </div>
     </div>
   );

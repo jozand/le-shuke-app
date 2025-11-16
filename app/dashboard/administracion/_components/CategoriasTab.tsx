@@ -39,9 +39,7 @@ export default function CategoriasTab() {
         setCategorias(data);
       } catch (err: unknown) {
         const mensaje =
-          err instanceof Error
-            ? err.message
-            : 'Error al cargar categorías';
+          err instanceof Error ? err.message : 'Error al cargar categorías';
         setError(mensaje);
         showToast({
           type: 'error',
@@ -64,7 +62,9 @@ export default function CategoriasTab() {
   };
 
   const onChange = (
-    e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>
+    e: React.ChangeEvent<
+      HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement
+    >
   ) => {
     const { name, value } = e.target;
     if (name === 'activa') {
@@ -117,9 +117,7 @@ export default function CategoriasTab() {
         const nuevaCat = await crearCategoria(payload);
 
         setCategorias((prev) =>
-          [...prev, nuevaCat].sort((a, b) =>
-            a.nombre.localeCompare(b.nombre)
-          )
+          [...prev, nuevaCat].sort((a, b) => a.nombre.localeCompare(b.nombre))
         );
 
         showToast({
@@ -317,97 +315,178 @@ export default function CategoriasTab() {
       )}
 
       {/* ===============================
-          TABLA DE CATEGORÍAS
+          LISTA / TABLA RESPONSIVE
       =============================== */}
-      <div className="overflow-x-auto rounded-[var(--radius-lg)] border border-[var(--border-color)]">
-        <table className="min-w-full text-sm">
-          <thead className="bg-[var(--bg-main)]/60">
-            <tr className="text-left text-xs uppercase text-[var(--text-secondary)]">
-              <th className="px-3 py-2">Nombre</th>
-              <th className="px-3 py-2">Descripción</th>
-              <th className="px-3 py-2 text-center">Estado</th>
-              <th className="px-3 py-2 text-right">Acciones</th>
-            </tr>
-          </thead>
-          <tbody>
-            {categorias.length === 0 && !cargando && (
-              <tr>
-                <td
-                  colSpan={4}
-                  className="px-3 py-4 text-center text-xs text-[var(--text-secondary)]"
-                >
-                  No hay categorías registradas.
-                </td>
-              </tr>
-            )}
 
-            {categorias.map((cat) => (
-              <tr
-                key={cat.categoriaId}
-                className="border-t border-[var(--border-color)] text-[var(--text-main)]"
+      {/* MÓVIL: Cards en lugar de tabla */}
+      <div className="space-y-2 md:hidden">
+        {cargando && (
+          <div className="flex items-center justify-center rounded-[var(--radius-md)] border border-[var(--border-color)] bg-[var(--bg-main)]/40 px-3 py-3 text-xs text-[var(--text-secondary)]">
+            <Loader2 className="mr-2 h-3 w-3 animate-spin" />
+            Cargando categorías...
+          </div>
+        )}
+
+        {!cargando && categorias.length === 0 && (
+          <div className="rounded-[var(--radius-md)] border border-[var(--border-color)] bg-[var(--bg-main)]/40 px-3 py-3 text-xs text-[var(--text-secondary)] text-center">
+            No hay categorías registradas.
+          </div>
+        )}
+
+        {categorias.map((cat) => (
+          <div
+            key={cat.categoriaId}
+            className="
+              rounded-[var(--radius-md)] border border-[var(--border-color)]
+              bg-[var(--bg-card)] px-3 py-2 text-xs
+              flex flex-col gap-2
+            "
+          >
+            <div className="flex items-start justify-between gap-2">
+              <div>
+                <p className="font-semibold text-[var(--text-main)]">
+                  {cat.nombre}
+                </p>
+                <p className="mt-0.5 text-[11px] text-[var(--text-secondary)]">
+                  {cat.descripcion || 'Sin descripción'}
+                </p>
+              </div>
+
+              <div className="shrink-0">
+                {cat.activa ? (
+                  <span className="inline-flex items-center gap-1 rounded-full bg-emerald-500/10 px-2 py-0.5 text-[10px] font-semibold text-emerald-300">
+                    <Check className="h-3 w-3" />
+                    Activa
+                  </span>
+                ) : (
+                  <span className="inline-flex items-center gap-1 rounded-full bg-zinc-500/10 px-2 py-0.5 text-[10px] font-semibold text-zinc-300">
+                    Inactiva
+                  </span>
+                )}
+              </div>
+            </div>
+
+            <div className="flex items-center justify-end gap-2">
+              <button
+                onClick={() => onEditar(cat)}
+                className="
+                  inline-flex items-center gap-1 rounded-full bg-[var(--bg-main)]
+                  px-2 py-1 text-[11px] text-[var(--text-secondary)]
+                  hover:bg-[var(--accent-primary)] hover:text-white
+                "
               >
-                <td className="px-3 py-2">{cat.nombre}</td>
-                <td className="px-3 py-2">
-                  {cat.descripcion || (
-                    <span className="text-[var(--text-secondary)]">—</span>
-                  )}
-                </td>
+                <Pencil className="h-3 w-3" />
+                Editar
+              </button>
 
-                <td className="px-3 py-2 text-center">
-                  {cat.activa ? (
-                    <span className="inline-flex items-center gap-1 rounded-full bg-emerald-500/10 px-2 py-0.5 text-[10px] font-semibold text-emerald-300">
-                      <Check className="h-3 w-3" />
-                      Activa
-                    </span>
-                  ) : (
-                    <span className="inline-flex items-center gap-1 rounded-full bg-zinc-500/10 px-2 py-0.5 text-[10px] font-semibold text-zinc-300">
-                      Inactiva
-                    </span>
-                  )}
-                </td>
+              <button
+                onClick={() => onEliminar(cat)}
+                className="
+                  inline-flex items-center gap-1 rounded-full bg-[var(--bg-main)]
+                  px-2 py-1 text-[11px] text-red-300
+                  hover:bg-red-500 hover:text-white
+                "
+              >
+                <Trash2 className="h-3 w-3" />
+                Desactivar
+              </button>
+            </div>
+          </div>
+        ))}
+      </div>
 
-                <td className="px-3 py-2 text-right">
-                  <div className="inline-flex items-center gap-2">
-                    <button
-                      onClick={() => onEditar(cat)}
-                      className="
-                        inline-flex items-center rounded-full bg-[var(--bg-main)]
-                        p-1.5 text-[var(--text-secondary)]
-                        hover:bg-[var(--accent-primary)] hover:text-white
-                      "
-                      title="Editar categoría"
-                    >
-                      <Pencil className="h-3 w-3" />
-                    </button>
-
-                    <button
-                      onClick={() => onEliminar(cat)}
-                      className="
-                        inline-flex items-center rounded-full bg-[var(--bg-main)]
-                        p-1.5 text-red-300 hover:bg-red-500 hover:text-white
-                      "
-                      title="Desactivar categoría"
-                    >
-                      <Trash2 className="h-3 w-3" />
-                    </button>
-                  </div>
-                </td>
+      {/* DESKTOP / TABLET: Tabla clásica */}
+      <div className="hidden md:block">
+        <div className="overflow-x-auto rounded-[var(--radius-lg)] border border-[var(--border-color)]">
+          <table className="min-w-full text-sm">
+            <thead className="bg-[var(--bg-main)]/60">
+              <tr className="text-left text-xs uppercase text-[var(--text-secondary)]">
+                <th className="px-3 py-2">Nombre</th>
+                <th className="px-3 py-2">Descripción</th>
+                <th className="px-3 py-2 text-center">Estado</th>
+                <th className="px-3 py-2 text-right">Acciones</th>
               </tr>
-            ))}
+            </thead>
+            <tbody>
+              {categorias.length === 0 && !cargando && (
+                <tr>
+                  <td
+                    colSpan={4}
+                    className="px-3 py-4 text-center text-xs text-[var(--text-secondary)]"
+                  >
+                    No hay categorías registradas.
+                  </td>
+                </tr>
+              )}
 
-            {cargando && (
-              <tr>
-                <td
-                  colSpan={4}
-                  className="px-3 py-3 text-center text-xs text-[var(--text-secondary)]"
+              {categorias.map((cat) => (
+                <tr
+                  key={cat.categoriaId}
+                  className="border-t border-[var(--border-color)] text-[var(--text-main)]"
                 >
-                  <Loader2 className="mr-2 inline h-3 w-3 animate-spin" />
-                  Cargando...
-                </td>
-              </tr>
-            )}
-          </tbody>
-        </table>
+                  <td className="px-3 py-2">{cat.nombre}</td>
+                  <td className="px-3 py-2">
+                    {cat.descripcion || (
+                      <span className="text-[var(--text-secondary)]">—</span>
+                    )}
+                  </td>
+
+                  <td className="px-3 py-2 text-center">
+                    {cat.activa ? (
+                      <span className="inline-flex items-center gap-1 rounded-full bg-emerald-500/10 px-2 py-0.5 text-[10px] font-semibold text-emerald-300">
+                        <Check className="h-3 w-3" />
+                        Activa
+                      </span>
+                    ) : (
+                      <span className="inline-flex items-center gap-1 rounded-full bg-zinc-500/10 px-2 py-0.5 text-[10px] font-semibold text-zinc-300">
+                        Inactiva
+                      </span>
+                    )}
+                  </td>
+
+                  <td className="px-3 py-2 text-right">
+                    <div className="inline-flex items-center gap-2">
+                      <button
+                        onClick={() => onEditar(cat)}
+                        className="
+                          inline-flex items-center rounded-full bg-[var(--bg-main)]
+                          p-1.5 text-[var(--text-secondary)]
+                          hover:bg-[var(--accent-primary)] hover:text-white
+                        "
+                        title="Editar categoría"
+                      >
+                        <Pencil className="h-3 w-3" />
+                      </button>
+
+                      <button
+                        onClick={() => onEliminar(cat)}
+                        className="
+                          inline-flex items-center rounded-full bg-[var(--bg-main)]
+                          p-1.5 text-red-300 hover:bg-red-500 hover:text-white
+                        "
+                        title="Desactivar categoría"
+                      >
+                        <Trash2 className="h-3 w-3" />
+                      </button>
+                    </div>
+                  </td>
+                </tr>
+              ))}
+
+              {cargando && (
+                <tr>
+                  <td
+                    colSpan={4}
+                    className="px-3 py-3 text-center text-xs text-[var(--text-secondary)]"
+                  >
+                    <Loader2 className="mr-2 inline h-3 w-3 animate-spin" />
+                    Cargando...
+                  </td>
+                </tr>
+              )}
+            </tbody>
+          </table>
+        </div>
       </div>
     </div>
   );

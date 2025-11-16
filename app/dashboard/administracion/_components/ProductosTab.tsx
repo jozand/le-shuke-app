@@ -55,10 +55,7 @@ export default function ProductosTab() {
             : 'Error al cargar productos';
 
         setError(mensaje);
-        showToast({
-          type: 'error',
-          message: mensaje,
-        });
+        showToast({ type: 'error', message: mensaje });
       } finally {
         setCargando(false);
       }
@@ -98,7 +95,6 @@ export default function ProductosTab() {
   const onSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    // Validaciones
     if (!form.nombre.trim()) {
       const mensaje = 'El nombre del producto es obligatorio';
       setError(mensaje);
@@ -168,11 +164,7 @@ export default function ProductosTab() {
           : 'Error al guardar el producto';
 
       setError(mensaje);
-
-      showToast({
-        type: 'error',
-        message: mensaje,
-      });
+      showToast({ type: 'error', message: mensaje });
     } finally {
       setCargando(false);
     }
@@ -230,11 +222,7 @@ export default function ProductosTab() {
               : 'Error al eliminar producto';
 
           setError(mensaje);
-
-          showToast({
-            type: 'error',
-            message: mensaje,
-          });
+          showToast({ type: 'error', message: mensaje });
         } finally {
           setCargando(false);
         }
@@ -248,6 +236,9 @@ export default function ProductosTab() {
     });
   };
 
+  // ========================================
+  // Helper categoría
+  // ========================================
   const getNombreCategoria = (categoriaId: number) => {
     const cat = categorias.find((c) => c.categoriaId === categoriaId);
     return cat?.nombre ?? '—';
@@ -258,7 +249,9 @@ export default function ProductosTab() {
   // ========================================
   return (
     <div className="space-y-4">
-      {/* FORMULARIO */}
+      {/* ========================================
+        FORMULARIO
+      ======================================== */}
       <form
         onSubmit={onSubmit}
         className="
@@ -267,7 +260,7 @@ export default function ProductosTab() {
           items-end
         "
       >
-        {/* --- Nombre --- */}
+        {/* Nombre */}
         <div>
           <label className="block text-xs font-medium text-[var(--text-secondary)] mb-1">
             Nombre del producto *
@@ -285,7 +278,7 @@ export default function ProductosTab() {
           />
         </div>
 
-        {/* --- Descripción --- */}
+        {/* Descripción */}
         <div>
           <label className="block text-xs font-medium text-[var(--text-secondary)] mb-1">
             Descripción
@@ -304,7 +297,7 @@ export default function ProductosTab() {
           />
         </div>
 
-        {/* --- Precio --- */}
+        {/* Precio */}
         <div>
           <label className="block text-xs font-medium text-[var(--text-secondary)] mb-1">
             Precio *
@@ -323,7 +316,7 @@ export default function ProductosTab() {
           />
         </div>
 
-        {/* --- Categoría --- */}
+        {/* Categoría */}
         <div>
           <label className="block text-xs font-medium text-[var(--text-secondary)] mb-1">
             Categoría *
@@ -347,7 +340,7 @@ export default function ProductosTab() {
           </select>
         </div>
 
-        {/* --- Estado + botones --- */}
+        {/* Estado */}
         <div className="flex items-center gap-2 md:flex-col md:items-stretch">
           <div className="flex-1">
             <label className="block text-xs font-medium text-[var(--text-secondary)] mb-1">
@@ -375,8 +368,8 @@ export default function ProductosTab() {
               className="
                 inline-flex items-center gap-2 rounded-[var(--radius-md)]
                 bg-[var(--accent-primary)] px-3 py-2 text-xs font-medium
-                text-white shadow-sm
-                hover:brightness-110 disabled:opacity-70
+                text-white shadow-sm hover:brightness-110
+                disabled:opacity-70
               "
             >
               {cargando && <Loader2 className="h-3 w-3 animate-spin" />}
@@ -410,102 +403,191 @@ export default function ProductosTab() {
         </div>
       )}
 
-      {/* TABLA */}
-      <div className="overflow-x-auto rounded-[var(--radius-lg)] border border-[var(--border-color)]">
-        <table className="min-w-full text-sm">
-          <thead className="bg-[var(--bg-main)]/60">
-            <tr className="text-left text-xs uppercase text-[var(--text-secondary)]">
-              <th className="px-3 py-2">Nombre</th>
-              <th className="px-3 py-2">Categoría</th>
-              <th className="px-3 py-2 text-right">Precio</th>
-              <th className="px-3 py-2 text-center">Estado</th>
-              <th className="px-3 py-2 text-right">Acciones</th>
-            </tr>
-          </thead>
+      {/* ========================================
+        LISTA RESPONSIVA
+      ======================================== */}
 
-          <tbody>
-            {/* VACÍO */}
-            {productos.length === 0 && !cargando && (
-              <tr>
-                <td
-                  colSpan={5}
-                  className="px-3 py-4 text-center text-xs text-[var(--text-secondary)]"
-                >
-                  No hay productos registrados.
-                </td>
-              </tr>
-            )}
+      {/* MOBILE: CARDS */}
+      <div className="space-y-2 md:hidden">
+        {cargando && (
+          <div className="flex items-center justify-center rounded-[var(--radius-md)] border border-[var(--border-color)]
+            bg-[var(--bg-main)]/40 px-3 py-3 text-xs text-[var(--text-secondary)]">
+            <Loader2 className="mr-2 h-3 w-3 animate-spin" />
+            Cargando productos...
+          </div>
+        )}
 
-            {/* LISTADO */}
-            {productos.map((prod) => (
-              <tr
-                key={prod.productoId}
-                className="border-t border-[var(--border-color)] text-[var(--text-main)]"
-              >
-                <td className="px-3 py-2">{prod.nombre}</td>
-                <td className="px-3 py-2">
-                  {getNombreCategoria(prod.categoriaId)}
-                </td>
-                <td className="px-3 py-2 text-right">
+        {!cargando && productos.length === 0 && (
+          <div className="rounded-[var(--radius-md)] border border-[var(--border-color)]
+            bg-[var(--bg-main)]/40 px-3 py-3 text-xs text-[var(--text-secondary)] text-center">
+            No hay productos registrados.
+          </div>
+        )}
+
+        {productos.map((prod) => (
+          <div
+            key={prod.productoId}
+            className="
+              rounded-[var(--radius-md)] border border-[var(--border-color)]
+              bg-[var(--bg-card)] px-3 py-2 text-xs flex flex-col gap-2
+            "
+          >
+            <div className="flex items-start justify-between gap-2">
+              <div>
+                <p className="font-semibold text-[var(--text-main)]">
+                  {prod.nombre}
+                </p>
+                <p className="mt-0.5 text-[11px] text-[var(--text-secondary)]">
+                  {prod.descripcion || 'Sin descripción'}
+                </p>
+
+                <p className="mt-0.5 text-[11px] text-[var(--text-secondary)]">
+                  Categoría: {getNombreCategoria(prod.categoriaId)}
+                </p>
+
+                <p className="mt-0.5 font-semibold text-[var(--text-main)]">
                   Q {Number(prod.precio).toFixed(2)}
-                </td>
+                </p>
+              </div>
 
-                <td className="px-3 py-2 text-center">
-                  {prod.activo ? (
-                    <span className="inline-flex items-center gap-1 rounded-full bg-emerald-500/10 px-2 py-0.5 text-[10px] font-semibold text-emerald-300">
-                      <Check className="h-3 w-3" />
-                      Activo
-                    </span>
-                  ) : (
-                    <span className="inline-flex items-center gap-1 rounded-full bg-zinc-500/10 px-2 py-0.5 text-[10px] font-semibold text-zinc-300">
-                      Inactivo
-                    </span>
-                  )}
-                </td>
+              <div className="shrink-0">
+                {prod.activo ? (
+                  <span className="inline-flex items-center gap-1 rounded-full bg-emerald-500/10
+                    px-2 py-0.5 text-[10px] font-semibold text-emerald-300">
+                    <Check className="h-3 w-3" /> Activo
+                  </span>
+                ) : (
+                  <span className="inline-flex items-center gap-1 rounded-full bg-zinc-500/10
+                    px-2 py-0.5 text-[10px] font-semibold text-zinc-300">
+                    Inactivo
+                  </span>
+                )}
+              </div>
+            </div>
 
-                <td className="px-3 py-2 text-right">
-                  <div className="inline-flex items-center gap-2">
-                    <button
-                      onClick={() => onEditar(prod)}
-                      className="
-                        inline-flex items-center rounded-full bg-[var(--bg-main)]
-                        p-1.5 text-[var(--text-secondary)]
-                        hover:bg-[var(--accent-primary)] hover:text-white
-                      "
-                      title="Editar producto"
-                    >
-                      <Pencil className="h-3 w-3" />
-                    </button>
+            <div className="flex items-center justify-end gap-2">
+              <button
+                onClick={() => onEditar(prod)}
+                className="
+                  inline-flex items-center gap-1 rounded-full bg-[var(--bg-main)]
+                  px-2 py-1 text-[11px] text-[var(--text-secondary)]
+                  hover:bg-[var(--accent-primary)] hover:text-white
+                "
+              >
+                <Pencil className="h-3 w-3" /> Editar
+              </button>
 
-                    <button
-                      onClick={() => onEliminar(prod)}
-                      className="
-                        inline-flex items-center rounded-full bg-[var(--bg-main)]
-                        p-1.5 text-red-300 hover:bg-red-500 hover:text-white
-                      "
-                      title="Desactivar producto"
-                    >
-                      <Trash2 className="h-3 w-3" />
-                    </button>
-                  </div>
-                </td>
+              <button
+                onClick={() => onEliminar(prod)}
+                className="
+                  inline-flex items-center gap-1 rounded-full bg-[var(--bg-main)]
+                  px-2 py-1 text-[11px] text-red-300 hover:bg-red-500 hover:text-white
+                "
+              >
+                <Trash2 className="h-3 w-3" /> Eliminar
+              </button>
+            </div>
+          </div>
+        ))}
+      </div>
+
+      {/* DESKTOP/TABLET: TABLA */}
+      <div className="hidden md:block">
+        <div className="overflow-x-auto rounded-[var(--radius-lg)] border border-[var(--border-color)]">
+          <table className="min-w-full text-sm">
+            <thead className="bg-[var(--bg-main)]/60">
+              <tr className="text-left text-xs uppercase text-[var(--text-secondary)]">
+                <th className="px-3 py-2">Nombre</th>
+                <th className="px-3 py-2">Categoría</th>
+                <th className="px-3 py-2 text-right">Precio</th>
+                <th className="px-3 py-2 text-center">Estado</th>
+                <th className="px-3 py-2 text-right">Acciones</th>
               </tr>
-            ))}
+            </thead>
 
-            {/* CARGANDO */}
-            {cargando && (
-              <tr>
-                <td
-                  colSpan={5}
-                  className="px-3 py-3 text-center text-xs text-[var(--text-secondary)]"
+            <tbody>
+              {!cargando && productos.length === 0 && (
+                <tr>
+                  <td
+                    colSpan={5}
+                    className="px-3 py-4 text-center text-xs text-[var(--text-secondary)]"
+                  >
+                    No hay productos registrados.
+                  </td>
+                </tr>
+              )}
+
+              {productos.map((prod) => (
+                <tr
+                  key={prod.productoId}
+                  className="border-t border-[var(--border-color)] text-[var(--text-main)]"
                 >
-                  <Loader2 className="mr-2 inline h-3 w-3 animate-spin" />
-                  Cargando...
-                </td>
-              </tr>
-            )}
-          </tbody>
-        </table>
+                  <td className="px-3 py-2">{prod.nombre}</td>
+                  <td className="px-3 py-2">
+                    {getNombreCategoria(prod.categoriaId)}
+                  </td>
+                  <td className="px-3 py-2 text-right">
+                    Q {Number(prod.precio).toFixed(2)}
+                  </td>
+
+                  <td className="px-3 py-2 text-center">
+                    {prod.activo ? (
+                      <span className="inline-flex items-center gap-1 rounded-full bg-emerald-500/10
+                        px-2 py-0.5 text-[10px] font-semibold text-emerald-300">
+                        <Check className="h-3 w-3" />
+                        Activo
+                      </span>
+                    ) : (
+                      <span className="inline-flex items-center gap-1 rounded-full bg-zinc-500/10
+                        px-2 py-0.5 text-[10px] font-semibold text-zinc-300">
+                        Inactivo
+                      </span>
+                    )}
+                  </td>
+
+                  <td className="px-3 py-2 text-right">
+                    <div className="inline-flex items-center gap-2">
+                      <button
+                        onClick={() => onEditar(prod)}
+                        className="
+                          inline-flex items-center rounded-full bg-[var(--bg-main)]
+                          p-1.5 text-[var(--text-secondary)]
+                          hover:bg-[var(--accent-primary)] hover:text-white
+                        "
+                        title="Editar producto"
+                      >
+                        <Pencil className="h-3 w-3" />
+                      </button>
+
+                      <button
+                        onClick={() => onEliminar(prod)}
+                        className="
+                          inline-flex items-center rounded-full bg-[var(--bg-main)]
+                          p-1.5 text-red-300 hover:bg-red-500 hover:text-white
+                        "
+                        title="Desactivar producto"
+                      >
+                        <Trash2 className="h-3 w-3" />
+                      </button>
+                    </div>
+                  </td>
+                </tr>
+              ))}
+
+              {cargando && (
+                <tr>
+                  <td
+                    colSpan={5}
+                    className="px-3 py-3 text-center text-xs text-[var(--text-secondary)]"
+                  >
+                    <Loader2 className="mr-2 inline h-3 w-3 animate-spin" />
+                    Cargando...
+                  </td>
+                </tr>
+              )}
+            </tbody>
+          </table>
+        </div>
       </div>
     </div>
   );

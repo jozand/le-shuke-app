@@ -51,6 +51,7 @@ export default function UsuariosTab() {
       try {
         setCargando(true);
         setError(null);
+
         const data = await obtenerUsuarios();
         setUsuarios(data);
       } catch (err: unknown) {
@@ -74,18 +75,16 @@ export default function UsuariosTab() {
     const cargarRoles = async () => {
       try {
         setCargandoRoles(true);
-        const res = await fetch('/api/roles');
 
+        const res = await fetch('/api/roles');
         if (!res.ok) throw new Error('No se pudieron cargar los roles');
 
         const json = await res.json();
         const data = (json.data ?? []) as RolDTO[];
-
         setRoles(data);
       } catch (err: unknown) {
         const mensaje =
           err instanceof Error ? err.message : 'Error al cargar roles';
-
         showToast({ type: 'error', message: mensaje });
       } finally {
         setCargandoRoles(false);
@@ -127,7 +126,6 @@ export default function UsuariosTab() {
   const onSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    // Validaciones
     if (!form.nombre.trim()) {
       const msg = 'El nombre es obligatorio';
       setError(msg);
@@ -241,7 +239,7 @@ export default function UsuariosTab() {
   };
 
   // ======================================
-  // Eliminar / desactivar
+  // Eliminar
   // ======================================
   const onEliminar = (usr: UsuarioDTO) => {
     showToast({
@@ -290,12 +288,17 @@ export default function UsuariosTab() {
   // ======================================
   return (
     <div className="space-y-4">
-      {/* FORMULARIO */}
+
+      {/* ======================================================== */}
+      {/* FORMULARIO RESPONSIVE */}
+      {/* ======================================================== */}
       <form
         onSubmit={onSubmit}
         className="
-          grid gap-3
-          md:grid-cols-[1.2fr_1.4fr_0.8fr_auto]
+          grid gap-4
+          sm:grid-cols-1 
+          md:grid-cols-2
+          lg:grid-cols-[1fr_1fr_1fr_auto]
           items-end
         "
       >
@@ -313,6 +316,7 @@ export default function UsuariosTab() {
               w-full rounded-[var(--radius-md)] border
               border-[var(--border-color)] bg-[var(--bg-main)]
               px-3 py-2 text-sm text-[var(--text-main)]
+              focus:outline-none focus:ring-1 focus:ring-[var(--accent-primary)]
             "
           />
         </div>
@@ -331,6 +335,7 @@ export default function UsuariosTab() {
               w-full rounded-[var(--radius-md)] border
               border-[var(--border-color)] bg-[var(--bg-main)]
               px-3 py-2 text-sm text-[var(--text-main)]
+              focus:outline-none focus:ring-1 focus:ring-[var(--accent-primary)]
             "
           />
         </div>
@@ -349,6 +354,7 @@ export default function UsuariosTab() {
               w-full rounded-[var(--radius-md)] border
               border-[var(--border-color)] bg-[var(--bg-main)]
               px-3 py-2 text-sm text-[var(--text-main)]
+              focus:outline-none focus:ring-1 focus:ring-[var(--accent-primary)]
             "
           >
             <option value="">
@@ -368,30 +374,30 @@ export default function UsuariosTab() {
         </div>
 
         {/* Contraseña */}
-        <div className="flex items-center gap-2 md:flex-col md:items-stretch">
-          <div className="flex-1">
-            <label className="block text-xs font-medium text-[var(--text-secondary)] mb-1">
-              Contraseña {!editandoId && '*'}
-            </label>
-            <input
-              type="password"
-              name="password"
-              value={form.password}
-              onChange={onChange}
-              placeholder={editandoId ? 'Dejar en blanco para no cambiar' : ''}
-              className="
-                w-full rounded-[var(--radius-md)] border
-                border-[var(--border-color)] bg-[var(--bg-main)]
-                px-3 py-2 text-sm text-[var(--text-main)]
-              "
-            />
-          </div>
+        <div>
+          <label className="block text-xs font-medium text-[var(--text-secondary)] mb-1">
+            Contraseña {!editandoId && '*'}
+          </label>
+          <input
+            type="password"
+            name="password"
+            value={form.password}
+            onChange={onChange}
+            placeholder={editandoId ? 'Dejar en blanco para no cambiar' : ''}
+            className="
+              w-full rounded-[var(--radius-md)] border
+              border-[var(--border-color)] bg-[var(--bg-main)]
+              px-3 py-2 text-sm text-[var(--text-main)]
+              focus:outline-none focus:ring-1 focus:ring-[var(--accent-primary)]
+            "
+          />
         </div>
 
-        {/* Estado + botones */}
-        <div className="flex items-center gap-2 md:flex-col md:items-stretch">
+        {/* Estado y botones */}
+        <div className="flex flex-col gap-3 mt-2 sm:mt-0">
 
-          <div className="flex-1">
+          {/* Estado */}
+          <div>
             <label className="block text-xs font-medium text-[var(--text-secondary)] mb-1">
               Estado
             </label>
@@ -403,6 +409,7 @@ export default function UsuariosTab() {
                 w-full rounded-[var(--radius-md)] border
                 border-[var(--border-color)] bg-[var(--bg-main)]
                 px-3 py-2 text-sm text-[var(--text-main)]
+                focus:outline-none focus:ring-1 focus:ring-[var(--accent-primary)]
               "
             >
               <option value="true">Activo</option>
@@ -410,8 +417,8 @@ export default function UsuariosTab() {
             </select>
           </div>
 
-          {/* BOTONES */}
-          <div className="flex gap-2 pt-2 md:pt-0 md:justify-end">
+          {/* Botones */}
+          <div className="flex gap-2 justify-end sm:justify-start">
             <button
               type="submit"
               disabled={cargando}
@@ -446,14 +453,16 @@ export default function UsuariosTab() {
         </div>
       </form>
 
-      {/* ERROR INLINE */}
+      {/* ERROR */}
       {error && (
         <div className="rounded-[var(--radius-md)] border border-red-500/60 bg-red-500/10 px-3 py-2 text-xs text-red-200">
           {error}
         </div>
       )}
 
-      {/* TABLA */}
+      {/* ======================================================== */}
+      {/* TABLA RESPONSIVA */}
+      {/* ======================================================== */}
       <div className="overflow-x-auto rounded-[var(--radius-lg)] border border-[var(--border-color)]">
         <table className="min-w-full text-sm">
           <thead className="bg-[var(--bg-main)]/60">
@@ -462,7 +471,7 @@ export default function UsuariosTab() {
               <th className="px-3 py-2">Correo</th>
               <th className="px-3 py-2 text-center">Rol</th>
               <th className="px-3 py-2 text-center">Estado</th>
-              <th className="px-3 py-2 text-right">Acciones</th>
+              <th className="px-3 py-2text-right">Acciones</th>
             </tr>
           </thead>
 
@@ -507,28 +516,39 @@ export default function UsuariosTab() {
                   </td>
 
                   <td className="px-3 py-2 text-right">
-                    <div className="inline-flex items-center gap-2">
+                    <div className="inline-flex items-center gap-3">
+
+                      {/* Editar */}
                       <button
                         onClick={() => onEditar(usr)}
                         className="
-                          inline-flex items-center rounded-full bg-[var(--bg-main)]
-                          p-1.5 text-[var(--text-secondary)]
+                          inline-flex items-center justify-center
+                          rounded-full bg-[var(--bg-main)]
+                          p-2 sm:p-2 md:p-1.5
+                          text-[var(--text-secondary)]
                           hover:bg-[var(--accent-primary)] hover:text-white
+                          active:scale-95 transition
                         "
+                        style={{ minWidth: 40, minHeight: 40 }}
                         title="Editar usuario"
                       >
-                        <Pencil className="h-3 w-3" />
+                        <Pencil className="h-4 w-4 md:h-3 md:w-3" />
                       </button>
 
+                      {/* Eliminar */}
                       <button
                         onClick={() => onEliminar(usr)}
                         className="
-                          inline-flex items-center rounded-full bg-[var(--bg-main)]
-                          p-1.5 text-red-300 hover:bg-red-500 hover:text-white
+                          inline-flex items-center justify-center
+                          rounded-full bg-[var(--bg-main)]
+                          p-2 sm:p-2 md:p-1.5
+                          text-red-300 hover:bg-red-500 hover:text-white
+                          active:scale-95 transition
                         "
+                        style={{ minWidth: 40, minHeight: 40 }}
                         title="Desactivar usuario"
                       >
-                        <Trash2 className="h-3 w-3" />
+                        <Trash2 className="h-4 w-4 md:h-3 md:w-3" />
                       </button>
                     </div>
                   </td>
