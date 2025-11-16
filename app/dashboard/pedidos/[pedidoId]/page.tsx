@@ -1,3 +1,4 @@
+// app/dashboard/pedidos/[pedidoId]/page.tsx
 'use client';
 
 import React, { useEffect, useMemo, useState } from 'react';
@@ -95,8 +96,7 @@ export default function PedidoPage() {
         title: 'Error',
         message: mensaje,
       });
-    }
-    finally {
+    } finally {
       setCargandoCatalogo(false);
     }
   }
@@ -116,8 +116,7 @@ export default function PedidoPage() {
         title: 'Error',
         message: mensaje,
       });
-    }
-    finally {
+    } finally {
       setCargandoDetalles(false);
     }
   }
@@ -139,8 +138,7 @@ export default function PedidoPage() {
         title: 'Error',
         message: mensaje,
       });
-    }
-    finally {
+    } finally {
       setCargandoMetodosPago(false);
     }
   }
@@ -190,8 +188,7 @@ export default function PedidoPage() {
         title: 'Error',
         message: mensaje,
       });
-    }
-    finally {
+    } finally {
       setProcesandoAccion(false);
     }
   }
@@ -234,8 +231,7 @@ export default function PedidoPage() {
         title: 'Error',
         message: mensaje,
       });
-    }
-    finally {
+    } finally {
       setProcesandoAccion(false);
     }
   }
@@ -272,8 +268,7 @@ export default function PedidoPage() {
         title: 'Error',
         message: mensaje,
       });
-    }
-    finally {
+    } finally {
       setProcesandoAccion(false);
     }
   }
@@ -336,8 +331,7 @@ export default function PedidoPage() {
         title: 'Error',
         message: mensaje,
       });
-    }
-    finally {
+    } finally {
       setFinalizando(false);
     }
   }
@@ -502,10 +496,9 @@ export default function PedidoPage() {
                             </span>
                           </div>
 
-                          {/* Cantidad + Agregar CORREGIDO */}
+                          {/* Cantidad + Agregar */}
                           <div className="mt-1 flex flex-col gap-3">
-
-                            {/* Selector cantidad */}
+                            {/* Selector cantidad (touch friendly) */}
                             <div
                               className="
                                 inline-flex items-center
@@ -516,12 +509,15 @@ export default function PedidoPage() {
                             >
                               <button
                                 type="button"
-                                onClick={() => cambiarCantidadCatalogo(prod.productoId, -1)}
+                                onClick={() =>
+                                  cambiarCantidadCatalogo(prod.productoId, -1)
+                                }
                                 disabled={procesandoAccion}
                                 className="
-                                  p-1 rounded-full
+                                  p-2 rounded-full
                                   hover:bg-[var(--bg-hover)]
                                   active:scale-95
+                                  touch-manipulation
                                 "
                               >
                                 <Minus className="h-4 w-4" />
@@ -535,33 +531,44 @@ export default function PedidoPage() {
                                   w-12 mx-1 text-center text-sm
                                   bg-transparent border-none
                                   focus:outline-none
+                                  appearance-none
                                 "
                                 value={cantidad}
                                 onChange={(e) =>
-                                  setCantidadCatalogoDirecto(prod.productoId, Number(e.target.value))
+                                  setCantidadCatalogoDirecto(
+                                    prod.productoId,
+                                    Number(e.target.value)
+                                  )
                                 }
                               />
 
                               <button
                                 type="button"
-                                onClick={() => cambiarCantidadCatalogo(prod.productoId, 1)}
+                                onClick={() =>
+                                  cambiarCantidadCatalogo(prod.productoId, 1)
+                                }
                                 disabled={procesandoAccion}
                                 className="
-                                  p-1 rounded-full
+                                  p-2 rounded-full
                                   hover:bg-[var(--bg-hover)]
                                   active:scale-95
+                                  touch-manipulation
                                 "
                               >
                                 <Plus className="h-4 w-4" />
                               </button>
                             </div>
 
-                            {/* Botón Agregar - FULL WIDTH en móvil */}
+                            {/* Botón Agregar */}
                             <button
                               type="button"
                               disabled={procesandoAccion}
                               onClick={() =>
-                                handleAgregarProducto(prod.productoId, prod.nombre, cantidad)
+                                handleAgregarProducto(
+                                  prod.productoId,
+                                  prod.nombre,
+                                  cantidad
+                                )
                               }
                               className="
                                 inline-flex items-center justify-center
@@ -576,7 +583,6 @@ export default function PedidoPage() {
                               <Plus className="h-4 w-4 mr-1" />
                               <span>Agregar</span>
                             </button>
-
                           </div>
                         </div>
                       );
@@ -641,9 +647,14 @@ export default function PedidoPage() {
                   </thead>
                   <tbody>
                     {detalles.map((d) => (
-                      <tr key={d.pedidoDetalleId} className="border-t border-[var(--border-color)]">
+                      <tr
+                        key={d.pedidoDetalleId}
+                        className="border-t border-[var(--border-color)]"
+                      >
                         <td className="px-2 py-2 align-top">
-                          <p className="font-medium text-[var(--text-main)]">{d.nombreProducto}</p>
+                          <p className="font-medium text-[var(--text-main)]">
+                            {d.nombreProducto}
+                          </p>
                           {d.categoriaNombre && (
                             <p className="text-[11px] text-[var(--text-muted)]">
                               {d.categoriaNombre}
@@ -651,23 +662,50 @@ export default function PedidoPage() {
                           )}
                         </td>
 
+                        {/* CONTROL DE CANTIDAD TOUCH FRIENDLY */}
                         <td className="px-2 py-2 align-middle text-center">
-                          <input
-                            type="number"
-                            min={0}
+                          <div
                             className="
-                              w-16 rounded-[var(--radius-sm)]
-                              border border-[var(--border-color)]
-                              bg-[var(--bg-elevated)]
-                              px-1 py-1 text-center text-xs
-                              focus:outline-none focus:ring-1 focus:ring-emerald-500
+                              inline-flex items-center justify-center gap-1
+                              rounded-full border border-[var(--border-color)]
+                              bg-[var(--bg-elevated)] px-2 py-1
+                              touch-manipulation
                             "
-                            value={d.cantidad}
-                            onChange={(e) =>
-                              handleCambiarCantidad(d, Number(e.target.value))
-                            }
-                            disabled={procesandoAccion}
-                          />
+                          >
+                            <button
+                              type="button"
+                              onClick={() =>
+                                handleCambiarCantidad(d, d.cantidad - 1)
+                              }
+                              disabled={procesandoAccion}
+                              className="
+                                p-2 rounded-full
+                                hover:bg-[var(--bg-hover)]
+                                active:scale-95
+                              "
+                            >
+                              <Minus className="h-4 w-4" />
+                            </button>
+
+                            <span className="w-8 text-center text-xs">
+                              {d.cantidad}
+                            </span>
+
+                            <button
+                              type="button"
+                              onClick={() =>
+                                handleCambiarCantidad(d, d.cantidad + 1)
+                              }
+                              disabled={procesandoAccion}
+                              className="
+                                p-2 rounded-full
+                                hover:bg-[var(--bg-hover)]
+                                active:scale-95
+                              "
+                            >
+                              <Plus className="h-4 w-4" />
+                            </button>
+                          </div>
                         </td>
 
                         <td className="px-2 py-2 align-middle text-right">
@@ -675,7 +713,10 @@ export default function PedidoPage() {
                         </td>
 
                         <td className="px-2 py-2 align-middle text-right">
-                          Q {(d.subtotal ?? d.cantidad * d.precioUnitario).toFixed(2)}
+                          Q{` `}
+                          {(
+                            d.subtotal ?? d.cantidad * d.precioUnitario
+                          ).toFixed(2)}
                         </td>
 
                         <td className="px-2 py-2 align-middle text-center">
@@ -684,13 +725,18 @@ export default function PedidoPage() {
                             onClick={() => handleEliminarDetalle(d)}
                             disabled={procesandoAccion}
                             className="
-                              inline-flex items-center justify-center
-                              rounded-full p-1.5
+                              inline-flex items-center justify-center gap-1
+                              rounded-full px-3 py-1.5
                               text-red-400 hover:bg-red-500/10
                               disabled:opacity-60 disabled:cursor-not-allowed
+                              touch-manipulation
                             "
                           >
-                            <Trash2 className="h-3 w-3" />
+                            <Trash2 className="h-4 w-4" />
+                            {/* En móviles muestra también el texto para que sea más claro */}
+                            <span className="text-[11px] font-medium sm:hidden">
+                              Quitar
+                            </span>
                           </button>
                         </td>
                       </tr>
@@ -738,7 +784,9 @@ export default function PedidoPage() {
                           value={m.metodoPagoId}
                           className="h-3 w-3"
                           checked={metodoPagoSeleccionadoId === m.metodoPagoId}
-                          onChange={() => setMetodoPagoSeleccionadoId(m.metodoPagoId)}
+                          onChange={() =>
+                            setMetodoPagoSeleccionadoId(m.metodoPagoId)
+                          }
                         />
                         <span className="font-medium">{m.nombre}</span>
                         {m.descripcion && (
