@@ -2,7 +2,9 @@
 
 @import '../styles/theme.css';
 
-
+/* ============================
+   VARIABLES BASE
+============================ */
 :root {
   --background: #ffffff;
   --foreground: #171717;
@@ -22,6 +24,28 @@
   }
 }
 
+/* ============================
+   RESETEO BÁSICO
+============================ */
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+/* OBLIGAMOS A NO DESBORDAR EN X */
+html,
+body {
+  margin: 0;
+  padding: 0;
+  width: 100%;
+  max-width: 100%;
+  min-height: 100%;
+  overflow-x: hidden;
+  /* 👈 mata el scroll horizontal */
+}
+
+/* ESTILO GENERAL DEL BODY */
 body {
   background: var(--background);
   color: var(--foreground);

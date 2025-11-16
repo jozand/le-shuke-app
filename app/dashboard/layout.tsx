@@ -16,17 +16,39 @@ export default function DashboardLayout({
         bg-[var(--bg-main)] 
         text-[var(--text-main)]
         transition-colors duration-300
+        w-full
+        overflow-x-hidden   /* 👈 MÁXIMA IMPORTANCIA */
       "
     >
       <AppHeader />
 
-      <div className="flex flex-1">
+      <div
+        className="
+          flex flex-1
+          w-full
+          overflow-x-hidden    /* 👈 Mata cualquier scroll lateral */
+        "
+      >
         {/* Sidebar izquierdo */}
         <AppSidebar />
 
         {/* Contenido central */}
-        <main className="flex-1">
-          <div className="mx-auto max-w-6xl px-4 py-8">
+        <main
+          className="
+            flex-1 
+            w-full         /* 👈 evita que crezca más del viewport */
+            overflow-x-hidden
+          "
+        >
+          <div
+            className="
+              w-full
+              max-w-full     /* 👈 ELIMINA EL max-w-6xl que rompía todo */
+              px-3 sm:px-4   /* 👈 padding seguro para mobile */
+              py-6
+              overflow-x-hidden
+            "
+          >
             {children}
           </div>
         </main>

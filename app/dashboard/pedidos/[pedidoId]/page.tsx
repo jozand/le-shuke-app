@@ -44,7 +44,9 @@ export default function PedidoPage() {
   const [cantidadesCatalogo, setCantidadesCatalogo] = useState<
     Record<number, number>
   >({});
-  const [categoriaActivaId, setCategoriaActivaId] = useState<number | null>(null);
+  const [categoriaActivaId, setCategoriaActivaId] = useState<number | null>(
+    null
+  );
 
   const [metodosPago, setMetodosPago] = useState<MetodoPagoDTO[]>([]);
   const [metodoPagoSeleccionadoId, setMetodoPagoSeleccionadoId] = useState<
@@ -332,10 +334,17 @@ export default function PedidoPage() {
     : null;
 
   return (
-    <section className="space-y-4 pb-24 pt-2 sm:pt-4">
+    <section
+      className="
+        w-full max-w-full
+        px-3 sm:px-4
+        space-y-4 pb-24 pt-2 sm:pt-4
+        overflow-x-hidden
+      "
+    >
       {/* ============ ENCABEZADO ============ */}
-      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 sm:gap-4">
-        <div className="flex items-center gap-3 w-full sm:w-auto">
+      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 sm:gap-4 w-full">
+        <div className="flex items-center gap-3 w-full sm:w-auto min-w-0">
           <button
             type="button"
             onClick={() => router.push('/dashboard/mesas')}
@@ -393,19 +402,24 @@ export default function PedidoPage() {
 
       {/* ========================================================= */}
       {/* GRID RESPONSIVO (DETALLE + CATÁLOGO) */}
-      {/* En móvil: detalle primero, catálogo después.
-          En lg+: catálogo izquierda, detalle derecha. */}
       {/* ========================================================= */}
-      <div className="grid gap-4 lg:grid-cols-[minmax(0,1.5fr)_minmax(0,1fr)]">
+      <div
+        className="
+          grid gap-4
+          lg:grid-cols-[minmax(0,1.5fr)_minmax(0,1fr)]
+          items-start w-full
+          overflow-x-hidden
+        "
+      >
         {/* ========================================================= */}
-        {/* DETALLE DE LA COMANDA — MODO RESPONSIVE (TABLE + CARDS) */}
+        {/* DETALLE DE LA COMANDA */}
         {/* ========================================================= */}
         <div
           className="
             order-1 lg:order-2
             rounded-[var(--radius-lg)] border border-[var(--border-color)]
             bg-[var(--bg-card)] shadow-[var(--shadow-card)]
-            p-3 sm:p-4
+            p-3 sm:p-4 w-full
           "
         >
           <div className="flex items-center justify-between mb-3">
@@ -429,7 +443,7 @@ export default function PedidoPage() {
           ) : (
             <div className="space-y-5">
               {/* -------- CARDS PARA MÓVIL -------- */}
-              <div className="md:hidden space-y-3 max-h-[48vh] overflow-y-auto pr-1">
+              <div className="md:hidden space-y-3 max-h-[48vh] overflow-y-auto pr-1 w-full overflow-x-hidden">
                 {detalles.map((d) => (
                   <div
                     key={d.pedidoDetalleId}
@@ -684,13 +698,11 @@ export default function PedidoPage() {
                   {metodosPago.map((m) => (
                     <label
                       key={m.metodoPagoId}
-                      className={`
-                        inline-flex items-center gap-2 rounded-full border px-3 py-1.5 text-xs cursor-pointer transition
+                      className={`inline-flex items-center gap-2 rounded-full border px-3 py-1.5 text-xs cursor-pointer transition
                         ${metodoPagoSeleccionadoId === m.metodoPagoId
                           ? 'border-emerald-500 bg-emerald-500/10 text-emerald-300'
                           : 'border-[var(--border-color)] bg-[var(--bg-elevated)] text-[var(--text-secondary)] hover:bg-[var(--bg-hover)]'
-                        }
-                      `}
+                        }`}
                     >
                       <input
                         type="radio"
@@ -735,7 +747,7 @@ export default function PedidoPage() {
             order-2 lg:order-1
             rounded-[var(--radius-lg)] border border-[var(--border-color)]
             bg-[var(--bg-card)] shadow-[var(--shadow-card)]
-            p-3 sm:p-4
+            p-3 sm:p-4 w-full
           "
         >
           <div className="flex items-center justify-between mb-3">
@@ -767,14 +779,12 @@ export default function PedidoPage() {
                         key={cat.categoriaId}
                         type="button"
                         onClick={() => setCategoriaActivaId(cat.categoriaId)}
-                        className={`
-                          relative inline-flex items-center whitespace-nowrap
+                        className={`relative inline-flex items-center whitespace-nowrap
                           rounded-full px-3 py-1.5 text-xs font-medium border transition
                           ${activa
                             ? 'bg-emerald-500/10 border-emerald-500 text-emerald-400'
                             : 'bg-[var(--bg-elevated)] border-[var(--border-color)] text-[var(--text-secondary)] hover:bg-[var(--bg-hover)]'
-                          }
-                        `}
+                          }`}
                       >
                         {cat.nombre}
                       </button>
@@ -784,7 +794,7 @@ export default function PedidoPage() {
               </div>
 
               {/* -------- PRODUCTOS DE LA CATEGORÍA -------- */}
-              <div className="max-h-[65vh] overflow-y-auto pr-1">
+              <div className="max-h-[65vh] overflow-y-auto pr-1 w-full overflow-x-hidden">
                 {categoriaActiva && categoriaActiva.productos.length > 0 ? (
                   <div
                     className="
@@ -807,6 +817,7 @@ export default function PedidoPage() {
                             bg-[var(--bg-elevated)]
                             px-3 py-3
                             hover:bg-[var(--bg-hover)] transition
+                            w-full
                           "
                         >
                           {/* Nombre + descripción */}

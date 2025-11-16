@@ -303,7 +303,172 @@ export default function UsuariosTab() {
         "
       >
         {/* campos */}
-        {/* ... (SIN CAMBIOS, TU FORMULARIO ESTÁ PERFECTO) */}
+        {/* ================================ FORMULARIO COMPLETO ================================ */}
+        {/* NOMBRE */}
+        <div className="flex flex-col">
+          <label className="text-xs text-[var(--text-secondary)] mb-1">
+            Nombre
+          </label>
+          <input
+            type="text"
+            name="nombre"
+            value={form.nombre}
+            onChange={onChange}
+            className="
+              rounded-[var(--radius-md)]
+              border border-[var(--border-color)]
+              bg-[var(--bg-main)]
+              px-3 py-2 text-sm
+              focus:outline-none focus:ring-2 focus:ring-[var(--accent-primary)]
+            "
+            placeholder="Nombre del usuario"
+          />
+        </div>
+
+        {/* EMAIL */}
+        <div className="flex flex-col">
+          <label className="text-xs text-[var(--text-secondary)] mb-1">
+            Correo electrónico
+          </label>
+          <input
+            type="email"
+            name="email"
+            value={form.email}
+            onChange={onChange}
+            className="
+            rounded-[var(--radius-md)]
+            border border-[var(--border-color)]
+            bg-[var(--bg-main)]
+            px-3 py-2 text-sm
+            focus:outline-none focus:ring-2 focus:ring-[var(--accent-primary)]
+          "
+            placeholder="correo@ejemplo.com"
+          />
+        </div>
+
+        {/* PASSWORD */}
+        <div className="flex flex-col">
+          <label className="text-xs text-[var(--text-secondary)] mb-1">
+            {editandoId ? 'Nueva contraseña (opcional)' : 'Contraseña'}
+          </label>
+
+          <input
+            type="password"
+            name="password"
+            value={form.password}
+            onChange={onChange}
+            className="
+              rounded-[var(--radius-md)]
+              border border-[var(--border-color)]
+              bg-[var(--bg-main)]
+              px-3 py-2 text-sm
+              focus:outline-none focus:ring-2 focus:ring-[var(--accent-primary)]
+            "
+            placeholder={editandoId ? "Dejar vacío para no cambiar" : "••••••••"}
+          />
+        </div>
+
+        {/* ROL */}
+        <div className="flex flex-col">
+          <label className="text-xs text-[var(--text-secondary)] mb-1">
+            Rol
+          </label>
+          <select
+            name="rolId"
+            value={form.rolId}
+            onChange={onChange}
+            className="
+              rounded-[var(--radius-md)]
+              border border-[var(--border-color)]
+              bg-[var(--bg-main)]
+              px-3 py-2 text-sm
+              focus:outline-none focus:ring-2 focus:ring-[var(--accent-primary)]
+            "
+          >
+            <option value="">Seleccione rol</option>
+
+            {roles.map((r) => (
+              <option key={r.rolId} value={r.rolId}>
+                {r.nombre}
+              </option>
+            ))}
+          </select>
+        </div>
+
+        {/* ACTIVO */}
+        <div className="flex flex-col">
+          <label className="text-xs text-[var(--text-secondary)] mb-1">
+            Estado
+          </label>
+          <select
+            name="activo"
+            value={String(form.activo)}
+            onChange={onChange}
+            className="
+              rounded-[var(--radius-md)]
+              border border-[var(--border-color)]
+              bg-[var(--bg-main)]
+              px-3 py-2 text-sm
+              focus:outline-none focus:ring-2 focus:ring-[var(--accent-primary)]
+            "
+          >
+            <option value="true">Activo</option>
+            <option value="false">Inactivo</option>
+          </select>
+        </div>
+
+        {/* BOTONES */}
+        <div className="flex gap-2 md:col-span-4 lg:col-span-1 justify-end mt-2">
+
+          {/* GUARDAR */}
+          <button
+            type="submit"
+            disabled={cargando}
+            className="
+            inline-flex items-center justify-center gap-1
+            rounded-[var(--radius-md)]
+            bg-[var(--accent-primary)]
+            px-4 py-2 text-sm font-medium text-white
+            hover:bg-[var(--accent-primary-hover)]
+            active:scale-95 transition
+            disabled:opacity-50 disabled:cursor-not-allowed
+          "
+          >
+            {cargando ? (
+              <>
+                <Loader2 className="h-4 w-4 animate-spin" /> Guardando...
+              </>
+            ) : editandoId ? (
+              <>
+                <Check className="h-4 w-4" /> Actualizar
+              </>
+            ) : (
+              <>
+                <Check className="h-4 w-4" /> Crear
+              </>
+            )}
+          </button>
+
+          {/* CANCELAR */}
+          <button
+            type="button"
+            disabled={!editandoId}
+            onClick={limpiarForm}
+            className="
+            inline-flex items-center justify-center gap-1
+            rounded-[var(--radius-md)]
+            bg-zinc-600/20
+            px-4 py-2 text-sm font-medium text-[var(--text-secondary)]
+            hover:bg-zinc-500 hover:text-white
+            active:scale-95 transition
+            disabled:opacity-40 disabled:cursor-not-allowed
+          "
+          >
+            <X className="h-4 w-4" /> Cancelar
+          </button>
+
+        </div>
+
       </form>
 
       {/* ERROR */}
