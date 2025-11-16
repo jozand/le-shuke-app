@@ -211,6 +211,10 @@ export default function MesasPage() {
                   key={mesa.mesaId}
                   type="button"
                   onClick={() => manejarClickMesa(mesa)}
+                  onTouchEnd={(e) => {
+                    e.preventDefault();     // ⚠️ NECESARIO EN iOS
+                    manejarClickMesa(mesa);
+                  }}
                   disabled={estaCargando}
                   className={`
                     relative flex flex-col items-start justify-between
@@ -223,6 +227,7 @@ export default function MesasPage() {
                     disabled:opacity-60 disabled:cursor-not-allowed
                   `}
                 >
+
                   <div className="flex w-full items-center justify-between gap-2">
                     <div>
                       <p className="text-xs font-medium uppercase tracking-wide text-[var(--text-secondary)]">

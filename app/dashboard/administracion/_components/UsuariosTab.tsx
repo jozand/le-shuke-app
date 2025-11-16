@@ -12,6 +12,9 @@ import {
 import { Loader2, Pencil, Trash2, Check, X } from 'lucide-react';
 import { useToast } from '@/context/ToastContext';
 
+// ======================================
+// DTO del Rol
+// ======================================
 type RolDTO = {
   rolId: number;
   nombre: string;
@@ -21,7 +24,11 @@ type RolDTO = {
 
 export default function UsuariosTab() {
   const [usuarios, setUsuarios] = useState<UsuarioDTO[]>([]);
+  const [roles, setRoles] = useState<RolDTO[]>([]);
+
   const [cargando, setCargando] = useState(false);
+  const [cargandoRoles, setCargandoRoles] = useState(false);
+
   const [error, setError] = useState<string | null>(null);
 
   const [editandoId, setEditandoId] = useState<number | null>(null);
@@ -34,12 +41,11 @@ export default function UsuariosTab() {
     activo: true,
   });
 
-  const [roles, setRoles] = useState<RolDTO[]>([]);
-  const [cargandoRoles, setCargandoRoles] = useState(false);
-
   const { showToast } = useToast();
 
+  // ======================================
   // Cargar usuarios
+  // ======================================
   useEffect(() => {
     const cargarUsuarios = async () => {
       try {
@@ -47,13 +53,12 @@ export default function UsuariosTab() {
         setError(null);
         const data = await obtenerUsuarios();
         setUsuarios(data);
-      } catch (err: any) {
-        const mensaje = err?.message || 'Error al cargar usuarios';
+      } catch (err: unknown) {
+        const mensaje =
+          err instanceof Error ? err.message : 'Error al cargar usuarios';
+
         setError(mensaje);
-        showToast({
-          type: 'error',
-          message: mensaje,
-        });
+        showToast({ type: 'error', message: mensaje });
       } finally {
         setCargando(false);
       }
@@ -62,24 +67,26 @@ export default function UsuariosTab() {
     cargarUsuarios();
   }, [showToast]);
 
-  // Cargar roles desde /api/roles
+  // ======================================
+  // Cargar roles
+  // ======================================
   useEffect(() => {
     const cargarRoles = async () => {
       try {
         setCargandoRoles(true);
         const res = await fetch('/api/roles');
-        if (!res.ok) {
-          throw new Error('No se pudieron cargar los roles');
-        }
+
+        if (!res.ok) throw new Error('No se pudieron cargar los roles');
+
         const json = await res.json();
-        const data = (json.data || []) as RolDTO[];
+        const data = (json.data ?? []) as RolDTO[];
+
         setRoles(data);
-      } catch (err: any) {
-        const mensaje = err?.message || 'Error al cargar roles';
-        showToast({
-          type: 'error',
-          message: mensaje,
-        });
+      } catch (err: unknown) {
+        const mensaje =
+          err instanceof Error ? err.message : 'Error al cargar roles';
+
+        showToast({ type: 'error', message: mensaje });
       } finally {
         setCargandoRoles(false);
       }
@@ -88,6 +95,9 @@ export default function UsuariosTab() {
     cargarRoles();
   }, [showToast]);
 
+  // ======================================
+  // Helpers
+  // ======================================
   const limpiarForm = () => {
     setForm({
       nombre: '',
@@ -103,6 +113,7 @@ export default function UsuariosTab() {
     e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>
   ) => {
     const { name, value } = e.target;
+
     if (name === 'activo') {
       setForm((prev) => ({ ...prev, activo: value === 'true' }));
     } else {
@@ -110,35 +121,38 @@ export default function UsuariosTab() {
     }
   };
 
+  // ======================================
+  // Submit
+  // ======================================
   const onSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
+    // Validaciones
     if (!form.nombre.trim()) {
-      const mensaje = 'El nombre es obligatorio';
-      setError(mensaje);
-      showToast({ type: 'error', message: mensaje });
+      const msg = 'El nombre es obligatorio';
+      setError(msg);
+      showToast({ type: 'error', message: msg });
       return;
     }
 
     if (!form.email.trim()) {
-      const mensaje = 'El correo electrónico es obligatorio';
-      setError(mensaje);
-      showToast({ type: 'error', message: mensaje });
+      const msg = 'El correo electrónico es obligatorio';
+      setError(msg);
+      showToast({ type: 'error', message: msg });
       return;
     }
 
     if (!form.rolId) {
-      const mensaje = 'Debe indicar un rol';
-      setError(mensaje);
-      showToast({ type: 'error', message: mensaje });
+      const msg = 'Debe seleccionar un rol';
+      setError(msg);
+      showToast({ type: 'error', message: msg });
       return;
     }
 
-    // Para creación, la contraseña es obligatoria
     if (!editandoId && !form.password.trim()) {
-      const mensaje = 'La contraseña es obligatoria para crear usuario';
-      setError(mensaje);
-      showToast({ type: 'error', message: mensaje });
+      const msg = 'La contraseña es obligatoria al crear usuario';
+      setError(msg);
+      showToast({ type: 'error', message: msg });
       return;
     }
 
@@ -160,52 +174,56 @@ export default function UsuariosTab() {
           activo: form.activo,
         };
 
-        if (form.password.trim()) {
-          payload.password = form.password.trim();
-        }
+        if (form.password.trim()) payload.password = form.password.trim();
 
         const usrActualizado = await actualizarUsuario(editandoId, payload);
+
         setUsuarios((prev) =>
           prev.map((u) =>
             u.usuarioId === editandoId ? usrActualizado : u
           )
         );
+
         showToast({
           type: 'success',
           message: `El usuario "${usrActualizado.nombre}" se actualizó correctamente.`,
         });
       } else {
-        const nuevoUsr = await crearUsuario({
+        const nuevoUsuario = await crearUsuario({
           nombre: form.nombre.trim(),
           email: form.email.trim(),
           password: form.password.trim(),
           rolId: Number(form.rolId),
           activo: form.activo,
         });
+
         setUsuarios((prev) =>
-          [...prev, nuevoUsr].sort((a, b) =>
+          [...prev, nuevoUsuario].sort((a, b) =>
             a.nombre.localeCompare(b.nombre)
           )
         );
+
         showToast({
           type: 'success',
-          message: `El usuario "${nuevoUsr.nombre}" se creó correctamente.`,
+          message: `El usuario "${nuevoUsuario.nombre}" fue creado correctamente.`,
         });
       }
 
       limpiarForm();
-    } catch (err: any) {
-      const mensaje = err?.message || 'Error al guardar el usuario';
+    } catch (err: unknown) {
+      const mensaje =
+        err instanceof Error ? err.message : 'Error al guardar usuario';
+
       setError(mensaje);
-      showToast({
-        type: 'error',
-        message: mensaje,
-      });
+      showToast({ type: 'error', message: mensaje });
     } finally {
       setCargando(false);
     }
   };
 
+  // ======================================
+  // Editar
+  // ======================================
   const onEditar = (usr: UsuarioDTO) => {
     setEditandoId(usr.usuarioId);
     setForm({
@@ -215,12 +233,16 @@ export default function UsuariosTab() {
       rolId: String(usr.rolId),
       activo: usr.activo,
     });
+
     showToast({
       type: 'info',
       message: `Editando el usuario "${usr.nombre}".`,
     });
   };
 
+  // ======================================
+  // Eliminar / desactivar
+  // ======================================
   const onEliminar = (usr: UsuarioDTO) => {
     showToast({
       type: 'confirm',
@@ -231,6 +253,7 @@ export default function UsuariosTab() {
           setError(null);
 
           const usrEliminado = await eliminarUsuario(usr.usuarioId);
+
           setUsuarios((prev) =>
             prev.map((u) =>
               u.usuarioId === usrEliminado.usuarioId ? usrEliminado : u
@@ -239,15 +262,16 @@ export default function UsuariosTab() {
 
           showToast({
             type: 'success',
-            message: `El usuario "${usr.nombre}" fue desactivado correctamente.`,
+            message: `El usuario "${usr.nombre}" fue desactivado.`,
           });
-        } catch (err: any) {
-          const mensaje = err?.message || 'Error al eliminar usuario';
+        } catch (err: unknown) {
+          const mensaje =
+            err instanceof Error
+              ? err.message
+              : 'Error al eliminar usuario';
+
           setError(mensaje);
-          showToast({
-            type: 'error',
-            message: mensaje,
-          });
+          showToast({ type: 'error', message: mensaje });
         } finally {
           setCargando(false);
         }
@@ -255,15 +279,18 @@ export default function UsuariosTab() {
       onCancel: () => {
         showToast({
           type: 'info',
-          message: 'Acción cancelada. No se realizaron cambios.',
+          message: 'Acción cancelada.',
         });
       },
     });
   };
 
+  // ======================================
+  // Render
+  // ======================================
   return (
     <div className="space-y-4">
-      {/* Formulario */}
+      {/* FORMULARIO */}
       <form
         onSubmit={onSubmit}
         className="
@@ -272,6 +299,7 @@ export default function UsuariosTab() {
           items-end
         "
       >
+        {/* Nombre */}
         <div>
           <label className="block text-xs font-medium text-[var(--text-secondary)] mb-1">
             Nombre *
@@ -289,6 +317,7 @@ export default function UsuariosTab() {
           />
         </div>
 
+        {/* Email */}
         <div>
           <label className="block text-xs font-medium text-[var(--text-secondary)] mb-1">
             Correo electrónico *
@@ -306,6 +335,7 @@ export default function UsuariosTab() {
           />
         </div>
 
+        {/* Rol */}
         <div>
           <label className="block text-xs font-medium text-[var(--text-secondary)] mb-1">
             Rol *
@@ -326,21 +356,22 @@ export default function UsuariosTab() {
                 ? 'Cargando roles...'
                 : roles.length === 0
                   ? 'No hay roles configurados'
-                  : 'Seleccione un rol'}
+                  : 'Seleccione...'}
             </option>
+
             {roles.map((rol) => (
-              <option key={rol.rolId} value={String(rol.rolId)}>
+              <option key={rol.rolId} value={rol.rolId}>
                 {rol.nombre}
               </option>
             ))}
           </select>
         </div>
 
+        {/* Contraseña */}
         <div className="flex items-center gap-2 md:flex-col md:items-stretch">
           <div className="flex-1">
             <label className="block text-xs font-medium text-[var(--text-secondary)] mb-1">
-              Contraseña
-              {!editandoId && ' *'}
+              Contraseña {!editandoId && '*'}
             </label>
             <input
               type="password"
@@ -357,7 +388,9 @@ export default function UsuariosTab() {
           </div>
         </div>
 
+        {/* Estado + botones */}
         <div className="flex items-center gap-2 md:flex-col md:items-stretch">
+
           <div className="flex-1">
             <label className="block text-xs font-medium text-[var(--text-secondary)] mb-1">
               Estado
@@ -377,6 +410,7 @@ export default function UsuariosTab() {
             </select>
           </div>
 
+          {/* BOTONES */}
           <div className="flex gap-2 pt-2 md:pt-0 md:justify-end">
             <button
               type="submit"
@@ -412,14 +446,14 @@ export default function UsuariosTab() {
         </div>
       </form>
 
-      {/* Error inline */}
+      {/* ERROR INLINE */}
       {error && (
         <div className="rounded-[var(--radius-md)] border border-red-500/60 bg-red-500/10 px-3 py-2 text-xs text-red-200">
           {error}
         </div>
       )}
 
-      {/* Tabla */}
+      {/* TABLA */}
       <div className="overflow-x-auto rounded-[var(--radius-lg)] border border-[var(--border-color)]">
         <table className="min-w-full text-sm">
           <thead className="bg-[var(--bg-main)]/60">
@@ -431,6 +465,7 @@ export default function UsuariosTab() {
               <th className="px-3 py-2 text-right">Acciones</th>
             </tr>
           </thead>
+
           <tbody>
             {usuarios.length === 0 && !cargando && (
               <tr>
@@ -453,9 +488,11 @@ export default function UsuariosTab() {
                 >
                   <td className="px-3 py-2">{usr.nombre}</td>
                   <td className="px-3 py-2">{usr.email}</td>
+
                   <td className="px-3 py-2 text-center">
                     {rol ? rol.nombre : `Rol #${usr.rolId}`}
                   </td>
+
                   <td className="px-3 py-2 text-center">
                     {usr.activo ? (
                       <span className="inline-flex items-center gap-1 rounded-full bg-emerald-500/10 px-2 py-0.5 text-[10px] font-semibold text-emerald-300">
@@ -468,6 +505,7 @@ export default function UsuariosTab() {
                       </span>
                     )}
                   </td>
+
                   <td className="px-3 py-2 text-right">
                     <div className="inline-flex items-center gap-2">
                       <button
@@ -481,6 +519,7 @@ export default function UsuariosTab() {
                       >
                         <Pencil className="h-3 w-3" />
                       </button>
+
                       <button
                         onClick={() => onEliminar(usr)}
                         className="

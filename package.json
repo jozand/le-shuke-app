@@ -5,7 +5,7 @@
   "scripts": {
     "dev": "next dev",
     "build": "next build",
-    "start": "next start",
+    "start": "next start -p 4000 -H 0.0.0.0",
     "lint": "eslint",
     "prisma:seed": "tsx prisma/seed.ts",
     "check:routes": "tsx scripts/check-api-routes.ts",

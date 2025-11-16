@@ -2,6 +2,7 @@
 
 import { createContext, useContext, useState, ReactNode } from 'react';
 import { ToastContainer } from '@/components/ui/ToastContainer';
+import { generateId } from '@/app/lib/utils/generateId'; // 👈 IMPORTANTE
 
 export type ToastType = 'success' | 'error' | 'info' | 'warning' | 'confirm';
 
@@ -33,7 +34,8 @@ export function ToastProvider({ children }: { children: ReactNode }) {
   const [toasts, setToasts] = useState<Toast[]>([]);
 
   const showToast = (options: ToastOptions) => {
-    const id = crypto.randomUUID();
+    const id = generateId(); // 👈 ✔ COMPATIBLE CON IPAD
+
     const toast: Toast = {
       id,
       type: options.type || 'info',

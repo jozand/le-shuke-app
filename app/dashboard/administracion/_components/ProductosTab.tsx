@@ -32,20 +32,28 @@ export default function ProductosTab() {
 
   const { showToast } = useToast();
 
+  // ========================================
   // Cargar productos + categorías
+  // ========================================
   useEffect(() => {
     const cargar = async () => {
       try {
         setCargando(true);
         setError(null);
+
         const [prods, cats] = await Promise.all([
           obtenerProductos(),
           obtenerCategorias(),
         ]);
+
         setProductos(prods);
         setCategorias(cats);
-      } catch (err: any) {
-        const mensaje = err?.message || 'Error al cargar productos';
+      } catch (err: unknown) {
+        const mensaje =
+          err instanceof Error
+            ? err.message
+            : 'Error al cargar productos';
+
         setError(mensaje);
         showToast({
           type: 'error',
@@ -55,6 +63,7 @@ export default function ProductosTab() {
         setCargando(false);
       }
     };
+
     cargar();
   }, [showToast]);
 
@@ -75,6 +84,7 @@ export default function ProductosTab() {
     >
   ) => {
     const { name, value } = e.target;
+
     if (name === 'activo') {
       setForm((prev) => ({ ...prev, activo: value === 'true' }));
     } else {
@@ -82,9 +92,13 @@ export default function ProductosTab() {
     }
   };
 
+  // ========================================
+  // Submit (crear/actualizar)
+  // ========================================
   const onSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
+    // Validaciones
     if (!form.nombre.trim()) {
       const mensaje = 'El nombre del producto es obligatorio';
       setError(mensaje);
@@ -120,22 +134,26 @@ export default function ProductosTab() {
 
       if (editandoId) {
         const prodActualizado = await actualizarProducto(editandoId, payload);
+
         setProductos((prev) =>
           prev.map((p) =>
             p.productoId === editandoId ? prodActualizado : p
           )
         );
+
         showToast({
           type: 'success',
           message: `El producto "${prodActualizado.nombre}" se actualizó correctamente.`,
         });
       } else {
         const nuevoProd = await crearProducto(payload);
+
         setProductos((prev) =>
           [...prev, nuevoProd].sort((a, b) =>
             a.nombre.localeCompare(b.nombre)
           )
         );
+
         showToast({
           type: 'success',
           message: `El producto "${nuevoProd.nombre}" se creó correctamente.`,
@@ -143,9 +161,14 @@ export default function ProductosTab() {
       }
 
       limpiarForm();
-    } catch (err: any) {
-      const mensaje = err?.message || 'Error al guardar el producto';
+    } catch (err: unknown) {
+      const mensaje =
+        err instanceof Error
+          ? err.message
+          : 'Error al guardar el producto';
+
       setError(mensaje);
+
       showToast({
         type: 'error',
         message: mensaje,
@@ -155,6 +178,9 @@ export default function ProductosTab() {
     }
   };
 
+  // ========================================
+  // Editar
+  // ========================================
   const onEditar = (prod: ProductoDTO) => {
     setEditandoId(prod.productoId);
     setForm({
@@ -164,12 +190,16 @@ export default function ProductosTab() {
       categoriaId: String(prod.categoriaId),
       activo: prod.activo,
     });
+
     showToast({
       type: 'info',
       message: `Editando el producto "${prod.nombre}".`,
     });
   };
 
+  // ========================================
+  // Eliminar (desactivar)
+  // ========================================
   const onEliminar = (prod: ProductoDTO) => {
     showToast({
       type: 'confirm',
@@ -180,18 +210,27 @@ export default function ProductosTab() {
           setError(null);
 
           const prodEliminado = await eliminarProducto(prod.productoId);
+
           setProductos((prev) =>
             prev.map((p) =>
-              p.productoId === prodEliminado.productoId ? prodEliminado : p
+              p.productoId === prodEliminado.productoId
+                ? prodEliminado
+                : p
             )
           );
+
           showToast({
             type: 'success',
             message: `El producto "${prod.nombre}" fue desactivado correctamente.`,
           });
-        } catch (err: any) {
-          const mensaje = err?.message || 'Error al eliminar producto';
+        } catch (err: unknown) {
+          const mensaje =
+            err instanceof Error
+              ? err.message
+              : 'Error al eliminar producto';
+
           setError(mensaje);
+
           showToast({
             type: 'error',
             message: mensaje,
@@ -214,9 +253,12 @@ export default function ProductosTab() {
     return cat?.nombre ?? '—';
   };
 
+  // ========================================
+  // RENDER
+  // ========================================
   return (
     <div className="space-y-4">
-      {/* Formulario */}
+      {/* FORMULARIO */}
       <form
         onSubmit={onSubmit}
         className="
@@ -225,6 +267,7 @@ export default function ProductosTab() {
           items-end
         "
       >
+        {/* --- Nombre --- */}
         <div>
           <label className="block text-xs font-medium text-[var(--text-secondary)] mb-1">
             Nombre del producto *
@@ -242,6 +285,7 @@ export default function ProductosTab() {
           />
         </div>
 
+        {/* --- Descripción --- */}
         <div>
           <label className="block text-xs font-medium text-[var(--text-secondary)] mb-1">
             Descripción
@@ -260,6 +304,7 @@ export default function ProductosTab() {
           />
         </div>
 
+        {/* --- Precio --- */}
         <div>
           <label className="block text-xs font-medium text-[var(--text-secondary)] mb-1">
             Precio *
@@ -278,6 +323,7 @@ export default function ProductosTab() {
           />
         </div>
 
+        {/* --- Categoría --- */}
         <div>
           <label className="block text-xs font-medium text-[var(--text-secondary)] mb-1">
             Categoría *
@@ -301,6 +347,7 @@ export default function ProductosTab() {
           </select>
         </div>
 
+        {/* --- Estado + botones --- */}
         <div className="flex items-center gap-2 md:flex-col md:items-stretch">
           <div className="flex-1">
             <label className="block text-xs font-medium text-[var(--text-secondary)] mb-1">
@@ -356,14 +403,14 @@ export default function ProductosTab() {
         </div>
       </form>
 
-      {/* Error inline */}
+      {/* ERROR INLINE */}
       {error && (
         <div className="rounded-[var(--radius-md)] border border-red-500/60 bg-red-500/10 px-3 py-2 text-xs text-red-200">
           {error}
         </div>
       )}
 
-      {/* Tabla */}
+      {/* TABLA */}
       <div className="overflow-x-auto rounded-[var(--radius-lg)] border border-[var(--border-color)]">
         <table className="min-w-full text-sm">
           <thead className="bg-[var(--bg-main)]/60">
@@ -375,7 +422,9 @@ export default function ProductosTab() {
               <th className="px-3 py-2 text-right">Acciones</th>
             </tr>
           </thead>
+
           <tbody>
+            {/* VACÍO */}
             {productos.length === 0 && !cargando && (
               <tr>
                 <td
@@ -387,6 +436,7 @@ export default function ProductosTab() {
               </tr>
             )}
 
+            {/* LISTADO */}
             {productos.map((prod) => (
               <tr
                 key={prod.productoId}
@@ -399,6 +449,7 @@ export default function ProductosTab() {
                 <td className="px-3 py-2 text-right">
                   Q {Number(prod.precio).toFixed(2)}
                 </td>
+
                 <td className="px-3 py-2 text-center">
                   {prod.activo ? (
                     <span className="inline-flex items-center gap-1 rounded-full bg-emerald-500/10 px-2 py-0.5 text-[10px] font-semibold text-emerald-300">
@@ -411,6 +462,7 @@ export default function ProductosTab() {
                     </span>
                   )}
                 </td>
+
                 <td className="px-3 py-2 text-right">
                   <div className="inline-flex items-center gap-2">
                     <button
@@ -424,6 +476,7 @@ export default function ProductosTab() {
                     >
                       <Pencil className="h-3 w-3" />
                     </button>
+
                     <button
                       onClick={() => onEliminar(prod)}
                       className="
@@ -439,6 +492,7 @@ export default function ProductosTab() {
               </tr>
             ))}
 
+            {/* CARGANDO */}
             {cargando && (
               <tr>
                 <td

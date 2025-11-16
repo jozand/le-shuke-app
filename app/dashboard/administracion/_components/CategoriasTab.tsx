@@ -27,7 +27,9 @@ export default function CategoriasTab() {
 
   const { showToast } = useToast();
 
+  // ===============================
   // Cargar categorías al inicio
+  // ===============================
   useEffect(() => {
     const cargar = async () => {
       try {
@@ -35,8 +37,11 @@ export default function CategoriasTab() {
         setError(null);
         const data = await obtenerCategorias();
         setCategorias(data);
-      } catch (err: any) {
-        const mensaje = err?.message || 'Error al cargar categorías';
+      } catch (err: unknown) {
+        const mensaje =
+          err instanceof Error
+            ? err.message
+            : 'Error al cargar categorías';
         setError(mensaje);
         showToast({
           type: 'error',
@@ -69,6 +74,9 @@ export default function CategoriasTab() {
     }
   };
 
+  // ===============================
+  // Submit crear/actualizar
+  // ===============================
   const onSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
@@ -94,22 +102,26 @@ export default function CategoriasTab() {
 
       if (editandoId) {
         const catActualizada = await actualizarCategoria(editandoId, payload);
+
         setCategorias((prev) =>
           prev.map((c) =>
             c.categoriaId === editandoId ? catActualizada : c
           )
         );
+
         showToast({
           type: 'success',
           message: `La categoría "${catActualizada.nombre}" se actualizó correctamente.`,
         });
       } else {
         const nuevaCat = await crearCategoria(payload);
+
         setCategorias((prev) =>
           [...prev, nuevaCat].sort((a, b) =>
             a.nombre.localeCompare(b.nombre)
           )
         );
+
         showToast({
           type: 'success',
           message: `La categoría "${nuevaCat.nombre}" se creó correctamente.`,
@@ -117,8 +129,9 @@ export default function CategoriasTab() {
       }
 
       limpiarForm();
-    } catch (err: any) {
-      const mensaje = err?.message || 'Error al guardar la categoría';
+    } catch (err: unknown) {
+      const mensaje =
+        err instanceof Error ? err.message : 'Error al guardar la categoría';
       setError(mensaje);
       showToast({
         type: 'error',
@@ -129,6 +142,9 @@ export default function CategoriasTab() {
     }
   };
 
+  // ===============================
+  // Editar
+  // ===============================
   const onEditar = (cat: CategoriaDTO) => {
     setEditandoId(cat.categoriaId);
     setForm({
@@ -136,12 +152,16 @@ export default function CategoriasTab() {
       descripcion: cat.descripcion ?? '',
       activa: cat.activa,
     });
+
     showToast({
       type: 'info',
       message: `Editando la categoría "${cat.nombre}".`,
     });
   };
 
+  // ===============================
+  // Eliminar (desactivar)
+  // ===============================
   const onEliminar = (cat: CategoriaDTO) => {
     showToast({
       type: 'confirm',
@@ -150,18 +170,22 @@ export default function CategoriasTab() {
         try {
           setCargando(true);
           setError(null);
+
           const catEliminada = await eliminarCategoria(cat.categoriaId);
+
           setCategorias((prev) =>
             prev.map((c) =>
               c.categoriaId === catEliminada.categoriaId ? catEliminada : c
             )
           );
+
           showToast({
             type: 'success',
             message: `La categoría "${cat.nombre}" fue desactivada correctamente.`,
           });
-        } catch (err: any) {
-          const mensaje = err?.message || 'Error al eliminar categoría';
+        } catch (err: unknown) {
+          const mensaje =
+            err instanceof Error ? err.message : 'Error al eliminar categoría';
           setError(mensaje);
           showToast({
             type: 'error',
@@ -182,7 +206,9 @@ export default function CategoriasTab() {
 
   return (
     <div className="space-y-4">
-      {/* Formulario */}
+      {/* ===============================
+          FORMULARIO
+      =============================== */}
       <form
         onSubmit={onSubmit}
         className="
@@ -281,14 +307,18 @@ export default function CategoriasTab() {
         </div>
       </form>
 
-      {/* Error inline */}
+      {/* ===============================
+          ERROR INLINE
+      =============================== */}
       {error && (
         <div className="rounded-[var(--radius-md)] border border-red-500/60 bg-red-500/10 px-3 py-2 text-xs text-red-200">
           {error}
         </div>
       )}
 
-      {/* Tabla */}
+      {/* ===============================
+          TABLA DE CATEGORÍAS
+      =============================== */}
       <div className="overflow-x-auto rounded-[var(--radius-lg)] border border-[var(--border-color)]">
         <table className="min-w-full text-sm">
           <thead className="bg-[var(--bg-main)]/60">
@@ -322,6 +352,7 @@ export default function CategoriasTab() {
                     <span className="text-[var(--text-secondary)]">—</span>
                   )}
                 </td>
+
                 <td className="px-3 py-2 text-center">
                   {cat.activa ? (
                     <span className="inline-flex items-center gap-1 rounded-full bg-emerald-500/10 px-2 py-0.5 text-[10px] font-semibold text-emerald-300">
@@ -334,6 +365,7 @@ export default function CategoriasTab() {
                     </span>
                   )}
                 </td>
+
                 <td className="px-3 py-2 text-right">
                   <div className="inline-flex items-center gap-2">
                     <button
@@ -347,6 +379,7 @@ export default function CategoriasTab() {
                     >
                       <Pencil className="h-3 w-3" />
                     </button>
+
                     <button
                       onClick={() => onEliminar(cat)}
                       className="
