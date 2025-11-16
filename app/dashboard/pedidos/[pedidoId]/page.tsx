@@ -1,3 +1,4 @@
+// app/dashboard/pedidos/[pedidoId]/page.tsx
 'use client';
 
 import React, { useEffect, useMemo, useState } from 'react';
@@ -40,11 +41,15 @@ export default function PedidoPage() {
   const [finalizando, setFinalizando] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const [cantidadesCatalogo, setCantidadesCatalogo] = useState<Record<number, number>>({});
+  const [cantidadesCatalogo, setCantidadesCatalogo] = useState<
+    Record<number, number>
+  >({});
   const [categoriaActivaId, setCategoriaActivaId] = useState<number | null>(null);
 
   const [metodosPago, setMetodosPago] = useState<MetodoPagoDTO[]>([]);
-  const [metodoPagoSeleccionadoId, setMetodoPagoSeleccionadoId] = useState<number | null>(null);
+  const [metodoPagoSeleccionadoId, setMetodoPagoSeleccionadoId] = useState<
+    number | null
+  >(null);
   const [cargandoMetodosPago, setCargandoMetodosPago] = useState(false);
 
   // TOTAL
@@ -120,7 +125,9 @@ export default function PedidoPage() {
       if (data.length === 1) setMetodoPagoSeleccionadoId(data[0].metodoPagoId);
     } catch (err) {
       const msg =
-        err instanceof Error ? err.message : 'Error al cargar métodos de pago';
+        err instanceof Error
+          ? err.message
+          : 'Error al cargar métodos de pago';
 
       showToast({ type: 'error', title: 'Error', message: msg });
     } finally {
@@ -145,7 +152,11 @@ export default function PedidoPage() {
   // =============================
   // Agregar producto
   // =============================
-  async function handleAgregarProducto(productoId: number, nombre: string, cantidad: number) {
+  async function handleAgregarProducto(
+    productoId: number,
+    nombre: string,
+    cantidad: number
+  ) {
     if (!pedidoId) return;
 
     if (!Number.isFinite(cantidad) || cantidad <= 0) {
@@ -167,7 +178,10 @@ export default function PedidoPage() {
         message: `Se agregaron ${cantidad} unidad(es) de "${nombre}".`,
       });
     } catch (err) {
-      const msg = err instanceof Error ? err.message : 'No se pudo agregar el producto.';
+      const msg =
+        err instanceof Error
+          ? err.message
+          : 'No se pudo agregar el producto.';
       showToast({ type: 'error', title: 'Error', message: msg });
     } finally {
       setProcesandoAccion(false);
@@ -177,7 +191,10 @@ export default function PedidoPage() {
   // =============================
   // Cambiar cantidad detalle
   // =============================
-  async function handleCambiarCantidad(detalle: PedidoDetalleDTO, nuevaCantidad: number) {
+  async function handleCambiarCantidad(
+    detalle: PedidoDetalleDTO,
+    nuevaCantidad: number
+  ) {
     if (nuevaCantidad <= 0) {
       const confirmar = await new Promise<boolean>((resolve) => {
         showToast({
@@ -270,7 +287,9 @@ export default function PedidoPage() {
       });
     }
 
-    const metodo = metodosPago.find((m) => m.metodoPagoId === metodoPagoSeleccionadoId);
+    const metodo = metodosPago.find(
+      (m) => m.metodoPagoId === metodoPagoSeleccionadoId
+    );
 
     const confirmar = await new Promise<boolean>((resolve) => {
       showToast({
@@ -313,38 +332,37 @@ export default function PedidoPage() {
     : null;
 
   return (
-    <section className="space-y-4 pb-10">
-
+    <section className="space-y-4 pb-24 pt-2 sm:pt-4">
       {/* ============ ENCABEZADO ============ */}
-      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
-        <div className="flex items-center gap-3">
+      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 sm:gap-4">
+        <div className="flex items-center gap-3 w-full sm:w-auto">
           <button
             type="button"
             onClick={() => router.push('/dashboard/mesas')}
             className="
               inline-flex items-center gap-2
               rounded-[var(--radius-md)] border border-[var(--border-color)]
-              bg-[var(--bg-elevated)] px-4 py-3
+              bg-[var(--bg-elevated)] px-3 py-2.5
               text-sm text-[var(--text-main)]
               hover:bg-[var(--bg-hover)] active:scale-95
               transition
             "
-            style={{ minHeight: 44 }}
           >
             <ArrowLeft className="h-5 w-5" />
             <span className="hidden xs:inline">Volver</span>
           </button>
 
-          <div>
-            <h1 className="text-xl sm:text-2xl font-bold text-[var(--text-main)]">
+          <div className="min-w-0">
+            <h1 className="text-lg sm:text-2xl font-bold text-[var(--text-main)] truncate">
               Comanda #{pedidoId}
             </h1>
-            <p className="mt-1 text-xs sm:text-sm text-[var(--text-secondary)]">
+            <p className="mt-1 text-xs sm:text-sm text-[var(--text-secondary)] truncate">
               Toca, suma, resta y finaliza fácilmente.
             </p>
           </div>
         </div>
 
+        {/* Botón Finalizar: full width en mobile, auto en desktop */}
         <button
           type="button"
           onClick={handleFinalizarPedido}
@@ -357,7 +375,7 @@ export default function PedidoPage() {
           className="
             inline-flex items-center justify-center gap-2
             rounded-[var(--radius-md)]
-            bg-emerald-500 px-6 py-3
+            bg-emerald-500 px-4 sm:px-6 py-2.5
             text-sm font-semibold text-white
             hover:bg-emerald-600
             disabled:opacity-50 disabled:cursor-not-allowed
@@ -374,234 +392,20 @@ export default function PedidoPage() {
       {error && <p className="text-sm text-red-400">{error}</p>}
 
       {/* ========================================================= */}
-      {/* GRID RESPONSIVO (CATÁLOGO + DETALLE) */}
+      {/* GRID RESPONSIVO (DETALLE + CATÁLOGO) */}
+      {/* En móvil: detalle primero, catálogo después.
+          En lg+: catálogo izquierda, detalle derecha. */}
       {/* ========================================================= */}
       <div className="grid gap-4 lg:grid-cols-[minmax(0,1.5fr)_minmax(0,1fr)]">
-        {/* ========================================================= */}
-        {/* CATÁLOGO */}
-        {/* ========================================================= */}
-        <div
-          className="
-            rounded-[var(--radius-lg)] border border-[var(--border-color)]
-            bg-[var(--bg-card)] shadow-[var(--shadow-card)]
-            p-4
-          "
-        >
-          <div className="flex items-center justify-between mb-3">
-            <h2 className="text-sm font-semibold text-[var(--text-main)]">
-              Catálogo de productos
-            </h2>
-
-            {cargandoCatalogo && (
-              <span className="inline-flex items-center gap-1 text-xs text-[var(--text-secondary)]">
-                <Loader2 className="h-3 w-3 animate-spin" />
-                <span>Cargando…</span>
-              </span>
-            )}
-          </div>
-
-          {catalogo.length === 0 && !cargandoCatalogo ? (
-            <p className="text-sm text-[var(--text-secondary)]">
-              No hay productos disponibles.
-            </p>
-          ) : (
-            <>
-              {/* -------- TABS DE CATEGORÍAS -------- */}
-              <div className="mb-3 border-b border-[var(--border-color)]">
-                <div className="flex gap-2 overflow-x-auto pb-1 no-scrollbar">
-                  {catalogo.map((cat) => {
-                    const activa = cat.categoriaId === categoriaActivaId;
-                    return (
-                      <button
-                        key={cat.categoriaId}
-                        type="button"
-                        onClick={() => setCategoriaActivaId(cat.categoriaId)}
-                        className={`
-                          relative inline-flex items-center whitespace-nowrap
-                          rounded-full px-3 py-1.5 text-xs font-medium border transition
-                          ${activa
-                            ? 'bg-emerald-500/10 border-emerald-500 text-emerald-400'
-                            : 'bg-[var(--bg-elevated)] border-[var(--border-color)] text-[var(--text-secondary)] hover:bg-[var(--bg-hover)]'
-                          }
-                        `}
-                      >
-                        {cat.nombre}
-                      </button>
-                    );
-                  })}
-                </div>
-              </div>
-
-              {/* -------- PRODUCTOS DE LA CATEGORÍA -------- */}
-              <div className="max-h-[70vh] overflow-y-auto pr-1">
-                {categoriaActiva && categoriaActiva.productos.length > 0 ? (
-                  <div
-                    className="
-                      grid grid-cols-1 
-                      sm:grid-cols-2 
-                      xl:grid-cols-3 
-                      gap-3
-                    "
-                  >
-                    {categoriaActiva.productos.map((prod) => {
-                      const cantidad = getCantidadCatalogo(prod.productoId);
-
-                      return (
-                        <div
-                          key={prod.productoId}
-                          className="
-                            flex flex-col justify-between gap-2
-                            rounded-[var(--radius-md)]
-                            border border-[var(--border-color)]
-                            bg-[var(--bg-elevated)]
-                            px-3 py-3
-                            hover:bg-[var(--bg-hover)] transition
-                          "
-                        >
-                          {/* Nombre + descripción */}
-                          <div className="flex w-full items-start justify-between gap-2">
-                            <div>
-                              <p className="text-sm font-semibold text-[var(--text-main)]">
-                                {prod.nombre}
-                              </p>
-
-                              {prod.descripcion && (
-                                <p className="mt-1 text-[11px] text-[var(--text-muted)] line-clamp-3">
-                                  {prod.descripcion}
-                                </p>
-                              )}
-                            </div>
-
-                            {/* Precio */}
-                            <span
-                              className="
-                                text-xs font-bold text-[var(--text-main)]
-                                whitespace-nowrap rounded-full
-                                border border-[var(--border-color)]
-                                px-2 py-1
-                              "
-                            >
-                              Q {prod.precio.toFixed(2)}
-                            </span>
-                          </div>
-
-                          {/* Cantidad + botón agregar */}
-                          <div className="mt-1 flex flex-col gap-3">
-
-                            {/* Selector táctil */}
-                            <div
-                              className="
-                                inline-flex items-center justify-between
-                                rounded-full border border-[var(--border-color)]
-                                bg-[var(--bg-card)] px-2 py-1
-                                w-full sm:w-auto
-                              "
-                            >
-                              {/* - */}
-                              <button
-                                type="button"
-                                onClick={() =>
-                                  cambiarCantidadCatalogo(prod.productoId, -1)
-                                }
-                                disabled={procesandoAccion}
-                                className="
-                                  flex items-center justify-center rounded-full 
-                                  bg-[var(--bg-elevated)] active:bg-[var(--bg-hover)]
-                                  transition active:scale-95
-                                "
-                                style={{ width: 40, height: 40 }}
-                              >
-                                <Minus className="h-5 w-5" />
-                              </button>
-
-                              {/* INPUT */}
-                              <input
-                                type="number"
-                                inputMode="numeric"
-                                pattern="[0-9]*"
-                                min={1}
-                                max={99}
-                                className="
-                                  w-14 mx-1 text-center text-base
-                                  bg-transparent border-none 
-                                  focus:outline-none appearance-none
-                                "
-                                style={{ fontSize: 16 }}
-                                value={cantidad}
-                                onChange={(e) =>
-                                  setCantidadCatalogoDirecto(
-                                    prod.productoId,
-                                    Number(e.target.value)
-                                  )
-                                }
-                              />
-
-                              {/* + */}
-                              <button
-                                type="button"
-                                onClick={() =>
-                                  cambiarCantidadCatalogo(prod.productoId, 1)
-                                }
-                                disabled={procesandoAccion}
-                                className="
-                                  flex items-center justify-center rounded-full 
-                                  bg-[var(--bg-elevated)] active:bg-[var(--bg-hover)]
-                                  transition active:scale-95
-                                "
-                                style={{ width: 40, height: 40 }}
-                              >
-                                <Plus className="h-5 w-5" />
-                              </button>
-                            </div>
-
-                            {/* Botón agregar */}
-                            <button
-                              type="button"
-                              disabled={procesandoAccion}
-                              onClick={() =>
-                                handleAgregarProducto(
-                                  prod.productoId,
-                                  prod.nombre,
-                                  cantidad
-                                )
-                              }
-                              className="
-                                inline-flex items-center justify-center
-                                rounded-[var(--radius-md)]
-                                bg-emerald-500 px-3 py-2 
-                                text-xs font-semibold text-white
-                                hover:bg-emerald-600
-                                disabled:opacity-55 disabled:cursor-not-allowed
-                                active:scale-[0.97] transition
-                                w-full sm:w-auto sm:self-end
-                              "
-                            >
-                              <Plus className="h-4 w-4 mr-1" />
-                              Agregar
-                            </button>
-                          </div>
-                        </div>
-                      );
-                    })}
-                  </div>
-                ) : (
-                  <p className="text-sm text-[var(--text-secondary)]">
-                    No hay productos configurados para esta categoría.
-                  </p>
-                )}
-              </div>
-            </>
-          )}
-        </div>
-
         {/* ========================================================= */}
         {/* DETALLE DE LA COMANDA — MODO RESPONSIVE (TABLE + CARDS) */}
         {/* ========================================================= */}
         <div
           className="
+            order-1 lg:order-2
             rounded-[var(--radius-lg)] border border-[var(--border-color)]
             bg-[var(--bg-card)] shadow-[var(--shadow-card)]
-            p-4
+            p-3 sm:p-4
           "
         >
           <div className="flex items-center justify-between mb-3">
@@ -624,9 +428,8 @@ export default function PedidoPage() {
             </p>
           ) : (
             <div className="space-y-5">
-
               {/* -------- CARDS PARA MÓVIL -------- */}
-              <div className="md:hidden space-y-3">
+              <div className="md:hidden space-y-3 max-h-[48vh] overflow-y-auto pr-1">
                 {detalles.map((d) => (
                   <div
                     key={d.pedidoDetalleId}
@@ -635,23 +438,28 @@ export default function PedidoPage() {
                       bg-[var(--bg-elevated)] p-3 flex flex-col gap-3
                     "
                   >
-                    <div className="flex justify-between">
-                      <div>
-                        <p className="text-sm font-semibold">{d.nombreProducto}</p>
+                    <div className="flex justify-between gap-2">
+                      <div className="min-w-0">
+                        <p className="text-sm font-semibold truncate">
+                          {d.nombreProducto}
+                        </p>
                         {d.categoriaNombre && (
-                          <p className="text-[11px] text-[var(--text-muted)]">
+                          <p className="text-[11px] text-[var(--text-muted)] truncate">
                             {d.categoriaNombre}
                           </p>
                         )}
                       </div>
 
-                      <p className="font-semibold">
-                        Q {(d.subtotal ?? d.cantidad * d.precioUnitario).toFixed(2)}
+                      <p className="font-semibold whitespace-nowrap">
+                        Q{' '}
+                        {(
+                          d.subtotal ?? d.cantidad * d.precioUnitario
+                        ).toFixed(2)}
                       </p>
                     </div>
 
                     {/* Cantidad táctil */}
-                    <div className="flex items-center justify-between">
+                    <div className="flex items-center justify-between gap-2">
                       <span className="text-xs text-[var(--text-secondary)]">
                         Cantidad
                       </span>
@@ -675,7 +483,7 @@ export default function PedidoPage() {
                             active:bg-[var(--bg-hover)]
                             transition active:scale-95
                           "
-                          style={{ width: 34, height: 34 }}
+                          style={{ width: 32, height: 32 }}
                         >
                           <Minus className="h-4 w-4" />
                         </button>
@@ -697,7 +505,7 @@ export default function PedidoPage() {
                             active:bg-[var(--bg-hover)]
                             transition active:scale-95
                           "
-                          style={{ width: 34, height: 34 }}
+                          style={{ width: 32, height: 32 }}
                         >
                           <Plus className="h-4 w-4" />
                         </button>
@@ -713,7 +521,8 @@ export default function PedidoPage() {
                         rounded-[var(--radius-md)]
                         text-red-400 bg-[var(--bg-elevated)]
                         active:bg-red-500/10
-                        px-3 py-2 transition active:scale-95
+                        px-3 py-2 text-xs font-medium
+                        transition active:scale-95
                       "
                     >
                       <Trash2 className="h-4 w-4" />
@@ -735,11 +544,21 @@ export default function PedidoPage() {
                 <table className="min-w-full text-xs">
                   <thead className="bg-[var(--bg-elevated)] sticky top-0 z-10">
                     <tr>
-                      <th className="px-2 py-2 text-left font-semibold">Producto</th>
-                      <th className="px-2 py-2 text-center font-semibold">Cant.</th>
-                      <th className="px-2 py-2 text-right font-semibold">P. Unit.</th>
-                      <th className="px-2 py-2 text-right font-semibold">Subtotal</th>
-                      <th className="px-2 py-2 text-center font-semibold">Acciones</th>
+                      <th className="px-2 py-2 text-left font-semibold">
+                        Producto
+                      </th>
+                      <th className="px-2 py-2 text-center font-semibold">
+                        Cant.
+                      </th>
+                      <th className="px-2 py-2 text-right font-semibold">
+                        P. Unit.
+                      </th>
+                      <th className="px-2 py-2 text-right font-semibold">
+                        Subtotal
+                      </th>
+                      <th className="px-2 py-2 text-center font-semibold">
+                        Acciones
+                      </th>
                     </tr>
                   </thead>
 
@@ -816,7 +635,10 @@ export default function PedidoPage() {
 
                         {/* SUBTOTAL */}
                         <td className="px-2 py-2 text-right">
-                          Q {(d.subtotal ?? d.cantidad * d.precioUnitario).toFixed(2)}
+                          Q{' '}
+                          {(
+                            d.subtotal ?? d.cantidad * d.precioUnitario
+                          ).toFixed(2)}
                         </td>
 
                         {/* ACCION */}
@@ -831,7 +653,7 @@ export default function PedidoPage() {
                               active:bg-red-500/10
                               px-3 py-2 transition active:scale-95
                             "
-                            style={{ minHeight: 44 }}
+                            style={{ minHeight: 40 }}
                           >
                             <Trash2 className="h-5 w-5" />
                           </button>
@@ -875,7 +697,9 @@ export default function PedidoPage() {
                         name="metodoPago"
                         className="h-3 w-3"
                         checked={metodoPagoSeleccionadoId === m.metodoPagoId}
-                        onChange={() => setMetodoPagoSeleccionadoId(m.metodoPagoId)}
+                        onChange={() =>
+                          setMetodoPagoSeleccionadoId(m.metodoPagoId)
+                        }
                       />
                       <span className="font-medium">{m.nombre}</span>
 
@@ -900,6 +724,229 @@ export default function PedidoPage() {
                 </span>
               </div>
             </div>
+          )}
+        </div>
+
+        {/* ========================================================= */}
+        {/* CATÁLOGO */}
+        {/* ========================================================= */}
+        <div
+          className="
+            order-2 lg:order-1
+            rounded-[var(--radius-lg)] border border-[var(--border-color)]
+            bg-[var(--bg-card)] shadow-[var(--shadow-card)]
+            p-3 sm:p-4
+          "
+        >
+          <div className="flex items-center justify-between mb-3">
+            <h2 className="text-sm font-semibold text-[var(--text-main)]">
+              Catálogo de productos
+            </h2>
+
+            {cargandoCatalogo && (
+              <span className="inline-flex items-center gap-1 text-xs text-[var(--text-secondary)]">
+                <Loader2 className="h-3 w-3 animate-spin" />
+                <span>Cargando…</span>
+              </span>
+            )}
+          </div>
+
+          {catalogo.length === 0 && !cargandoCatalogo ? (
+            <p className="text-sm text-[var(--text-secondary)]">
+              No hay productos disponibles.
+            </p>
+          ) : (
+            <>
+              {/* -------- TABS DE CATEGORÍAS -------- */}
+              <div className="mb-3 border-b border-[var(--border-color)]">
+                <div className="flex gap-2 overflow-x-auto pb-1 no-scrollbar">
+                  {catalogo.map((cat) => {
+                    const activa = cat.categoriaId === categoriaActivaId;
+                    return (
+                      <button
+                        key={cat.categoriaId}
+                        type="button"
+                        onClick={() => setCategoriaActivaId(cat.categoriaId)}
+                        className={`
+                          relative inline-flex items-center whitespace-nowrap
+                          rounded-full px-3 py-1.5 text-xs font-medium border transition
+                          ${activa
+                            ? 'bg-emerald-500/10 border-emerald-500 text-emerald-400'
+                            : 'bg-[var(--bg-elevated)] border-[var(--border-color)] text-[var(--text-secondary)] hover:bg-[var(--bg-hover)]'
+                          }
+                        `}
+                      >
+                        {cat.nombre}
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+
+              {/* -------- PRODUCTOS DE LA CATEGORÍA -------- */}
+              <div className="max-h-[65vh] overflow-y-auto pr-1">
+                {categoriaActiva && categoriaActiva.productos.length > 0 ? (
+                  <div
+                    className="
+                      grid grid-cols-1 
+                      sm:grid-cols-2 
+                      xl:grid-cols-3 
+                      gap-3
+                    "
+                  >
+                    {categoriaActiva.productos.map((prod) => {
+                      const cantidad = getCantidadCatalogo(prod.productoId);
+
+                      return (
+                        <div
+                          key={prod.productoId}
+                          className="
+                            flex flex-col justify-between gap-2
+                            rounded-[var(--radius-md)]
+                            border border-[var(--border-color)]
+                            bg-[var(--bg-elevated)]
+                            px-3 py-3
+                            hover:bg-[var(--bg-hover)] transition
+                          "
+                        >
+                          {/* Nombre + descripción */}
+                          <div className="flex w-full items-start justify-between gap-2">
+                            <div className="min-w-0">
+                              <p className="text-sm font-semibold text-[var(--text-main)] truncate">
+                                {prod.nombre}
+                              </p>
+
+                              {prod.descripcion && (
+                                <p className="mt-1 text-[11px] text-[var(--text-muted)] line-clamp-3">
+                                  {prod.descripcion}
+                                </p>
+                              )}
+                            </div>
+
+                            {/* Precio */}
+                            <span
+                              className="
+                                text-xs font-bold text-[var(--text-main)]
+                                whitespace-nowrap rounded-full
+                                border border-[var(--border-color)]
+                                px-2 py-1
+                              "
+                            >
+                              Q {prod.precio.toFixed(2)}
+                            </span>
+                          </div>
+
+                          {/* Cantidad + botón agregar */}
+                          <div className="mt-1 flex flex-col gap-2 sm:gap-3">
+                            {/* Selector táctil */}
+                            <div
+                              className="
+                                inline-flex items-center justify-between
+                                rounded-full border border-[var(--border-color)]
+                                bg-[var(--bg-card)] px-2 py-1
+                                w-full sm:w-auto
+                              "
+                            >
+                              {/* - */}
+                              <button
+                                type="button"
+                                onClick={() =>
+                                  cambiarCantidadCatalogo(
+                                    prod.productoId,
+                                    -1
+                                  )
+                                }
+                                disabled={procesandoAccion}
+                                className="
+                                  flex items-center justify-center rounded-full 
+                                  bg-[var(--bg-elevated)] active:bg-[var(--bg-hover)]
+                                  transition active:scale-95
+                                "
+                                style={{ width: 36, height: 36 }}
+                              >
+                                <Minus className="h-5 w-5" />
+                              </button>
+
+                              {/* INPUT */}
+                              <input
+                                type="number"
+                                inputMode="numeric"
+                                pattern="[0-9]*"
+                                min={1}
+                                max={99}
+                                className="
+                                  w-14 mx-1 text-center text-base
+                                  bg-transparent border-none 
+                                  focus:outline-none appearance-none
+                                "
+                                style={{ fontSize: 16 }}
+                                value={cantidad}
+                                onChange={(e) =>
+                                  setCantidadCatalogoDirecto(
+                                    prod.productoId,
+                                    Number(e.target.value)
+                                  )
+                                }
+                              />
+
+                              {/* + */}
+                              <button
+                                type="button"
+                                onClick={() =>
+                                  cambiarCantidadCatalogo(
+                                    prod.productoId,
+                                    1
+                                  )
+                                }
+                                disabled={procesandoAccion}
+                                className="
+                                  flex items-center justify-center rounded-full 
+                                  bg-[var(--bg-elevated)] active:bg-[var(--bg-hover)]
+                                  transition active:scale-95
+                                "
+                                style={{ width: 36, height: 36 }}
+                              >
+                                <Plus className="h-5 w-5" />
+                              </button>
+                            </div>
+
+                            {/* Botón agregar */}
+                            <button
+                              type="button"
+                              disabled={procesandoAccion}
+                              onClick={() =>
+                                handleAgregarProducto(
+                                  prod.productoId,
+                                  prod.nombre,
+                                  cantidad
+                                )
+                              }
+                              className="
+                                inline-flex items-center justify-center
+                                rounded-[var(--radius-md)]
+                                bg-emerald-500 px-3 py-2 
+                                text-xs font-semibold text-white
+                                hover:bg-emerald-600
+                                disabled:opacity-55 disabled:cursor-not-allowed
+                                active:scale-[0.97] transition
+                                w-full sm:w-auto sm:self-end
+                              "
+                            >
+                              <Plus className="h-4 w-4 mr-1" />
+                              Agregar
+                            </button>
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                ) : (
+                  <p className="text-sm text-[var(--text-secondary)]">
+                    No hay productos configurados para esta categoría.
+                  </p>
+                )}
+              </div>
+            </>
           )}
         </div>
       </div>
