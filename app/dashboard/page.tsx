@@ -1,4 +1,5 @@
 // app/dashboard/page.tsx
+
 import { cookies } from 'next/headers';
 import { redirect } from 'next/navigation';
 import { verificarToken } from '@/app/lib/auth';
@@ -20,7 +21,7 @@ type DashboardKPIs = {
 };
 
 type DashboardVentaDia = {
-  fecha: string; // 'YYYY-MM-DD'
+  fecha: string;
   totalVentas: number;
   totalPedidos: number;
 };
@@ -85,15 +86,12 @@ export default async function DashboardPage() {
   const payload = verificarToken(token) as TokenPayload | null;
   if (!payload) redirect('/login');
 
-  // 🔹 Si hay NEXT_PUBLIC_BASE_URL la usamos; si no, usamos ruta relativa
   const baseUrl = process.env.NEXT_PUBLIC_BASE_URL ?? '';
 
   const res = await fetch(`${baseUrl}/api/dashboard`, {
     method: 'GET',
     headers: {
       'x-usuario-id': String(payload.usuarioId),
-      // si quieres pasar también el rol:
-      // 'x-rol': payload.rol,
     },
     cache: 'no-store',
   });
@@ -103,9 +101,7 @@ export default async function DashboardPage() {
     return (
       <section className="space-y-6 text-[var(--text-main)]">
         <div>
-          <h1 className="text-2xl font-bold tracking-tight text-[var(--text-main)]">
-            Panel principal
-          </h1>
+          <h1 className="text-2xl font-bold tracking-tight">Panel principal</h1>
           <p className="mt-1 text-sm text-[var(--text-secondary)]">
             Ocurrió un error al cargar los indicadores del dashboard.
           </p>
@@ -119,11 +115,10 @@ export default async function DashboardPage() {
           "
         >
           <p className="text-sm font-semibold text-rose-800 dark:text-rose-200">
-            No fue posible obtener los datos de dashboard.
+            No fue posible obtener los datos del dashboard.
           </p>
           <p className="mt-1 text-xs text-rose-700/80 dark:text-rose-200/80">
-            Verifica el endpoint <code>/api/dashboard</code> y vuelve a
-            intentar.
+            Verifica el endpoint <code>/api/dashboard</code> e intenta nuevamente.
           </p>
         </div>
       </section>
@@ -155,7 +150,7 @@ export default async function DashboardPage() {
     {
       titulo: 'Pedidos en el período',
       valor: kpis.totalPedidos.toString(),
-      desc: 'Comandas registradas en el rango de fechas.',
+      desc: 'Comandas registradas en el rango.',
     },
     {
       titulo: 'Ventas promedio',
@@ -173,16 +168,16 @@ export default async function DashboardPage() {
   const topMesero = topMeseros[0];
 
   return (
-    <section className="space-y-6 text-[var(--text-main)]">
+    <section className="space-y-6 text-[var(--text-main)] min-w-0 w-full overflow-x-hidden">
       {/* Encabezado */}
-      <div>
-        <h1 className="text-2xl font-bold tracking-tight text-[var(--text-main)]">
-          Panel principal
-        </h1>
+      <div className="min-w-0">
+        <h1 className="text-2xl font-bold tracking-tight">Panel principal</h1>
+
         <p className="mt-1 text-sm text-[var(--text-secondary)]">
           Bienvenido al sistema de control de comandas del restaurante.
         </p>
-        <p className="mt-1 text-xs text-[var(--text-muted)]">
+
+        <p className="mt-1 text-xs text-[var(--text-muted)] truncate max-w-full">
           Período analizado:{' '}
           <span className="font-medium">{periodoTexto}</span>{' '}
           · Vista:{' '}
@@ -193,27 +188,24 @@ export default async function DashboardPage() {
       </div>
 
       {/* Tarjetas resumen */}
-      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+      <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4">
         {cards.map((card, idx) => (
           <div
             key={idx}
             className="
-              rounded-xl 
-              border 
-              p-4 
-              backdrop-blur-xl 
-              shadow-[var(--shadow-card)]
-              bg-[var(--bg-card)]
-              border-[var(--border-color)]
+              min-w-0
+              rounded-xl border p-4
+              backdrop-blur-xl shadow-[var(--shadow-card)]
+              bg-[var(--bg-card)] border-[var(--border-color)]
             "
           >
-            <p className="text-xs font-medium uppercase tracking-wide text-[var(--text-secondary)]">
+            <p className="text-xs font-medium uppercase tracking-wide text-[var(--text-secondary)] truncate">
               {card.titulo}
             </p>
-            <p className="mt-2 text-2xl font-semibold text-[var(--text-main)]">
+            <p className="mt-2 text-2xl font-semibold text-[var(--text-main)] truncate">
               {card.valor}
             </p>
-            <p className="mt-1 text-xs text-[var(--text-secondary)]">
+            <p className="mt-1 text-xs text-[var(--text-secondary)] truncate">
               {card.desc}
             </p>
           </div>
@@ -221,25 +213,23 @@ export default async function DashboardPage() {
       </div>
 
       {/* Zona inferior */}
-      <div className="grid gap-4 lg:grid-cols-3">
+      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3 min-w-0">
         {/* Resumen de actividad */}
         <div
           className="
-            rounded-xl 
-            border 
-            p-4 
-            backdrop-blur-xl 
-            shadow-[var(--shadow-card)]
-            bg-[var(--bg-card)]
-            border-[var(--border-color)]
-            lg:col-span-2
+            min-w-0
+            rounded-xl border p-4
+            backdrop-blur-xl shadow-[var(--shadow-card)]
+            bg-[var(--bg-card)] border-[var(--border-color)]
+            md:col-span-2 lg:col-span-2
           "
         >
-          <h2 className="text-sm font-semibold text-[var(--text-main)]">
+          <h2 className="text-sm font-semibold text-[var(--text-main)] truncate">
             Resumen de actividad
           </h2>
+
           <p className="mt-2 text-xs text-[var(--text-secondary)]">
-            En el período seleccionado se han registrado{' '}
+            En este período se registraron{' '}
             <span className="font-semibold">{kpis.totalPedidos} pedidos</span>{' '}
             por un total de{' '}
             <span className="font-semibold">
@@ -248,24 +238,25 @@ export default async function DashboardPage() {
             .
           </p>
 
-          <div className="mt-4 grid gap-3 md:grid-cols-2">
-            <div className="rounded-lg border border-[var(--border-subtle)] bg-[var(--bg-subtle)] p-3">
-              <p className="text-xs font-semibold text-[var(--text-main)]">
+          <div className="mt-4 grid gap-3 md:grid-cols-2 min-w-0">
+            <div className="rounded-lg border border-[var(--border-subtle)] bg-[var(--bg-subtle)] p-3 min-w-0">
+              <p className="text-xs font-semibold text-[var(--text-main)] truncate">
                 Ventas por día
               </p>
+
               {ventasPorDia.length === 0 ? (
                 <p className="mt-1 text-xs text-[var(--text-secondary)]">
-                  Aún no hay ventas registradas en este período.
+                  No hay ventas en este período.
                 </p>
               ) : (
                 <ul className="mt-2 space-y-1 max-h-44 overflow-auto text-xs text-[var(--text-secondary)]">
                   {ventasPorDia.slice(-7).map((v) => (
                     <li
                       key={v.fecha}
-                      className="flex items-center justify-between"
+                      className="flex items-center justify-between min-w-0"
                     >
-                      <span>{formatearFechaCorta(v.fecha)}</span>
-                      <span className="font-medium">
+                      <span className="truncate">{formatearFechaCorta(v.fecha)}</span>
+                      <span className="font-medium truncate">
                         {formatearMoneda(v.totalVentas)} · {v.totalPedidos} ped.
                       </span>
                     </li>
@@ -274,23 +265,24 @@ export default async function DashboardPage() {
               )}
             </div>
 
-            <div className="rounded-lg border border-[var(--border-subtle)] bg-[var(--bg-subtle)] p-3">
-              <p className="text-xs font-semibold text-[var(--text-main)]">
+            <div className="rounded-lg border border-[var(--border-subtle)] bg-[var(--bg-subtle)] p-3 min-w-0">
+              <p className="text-xs font-semibold text-[var(--text-main)] truncate">
                 Ventas por método de pago
               </p>
+
               {ventasPorMetodoPago.length === 0 ? (
                 <p className="mt-1 text-xs text-[var(--text-secondary)]">
-                  Aún no hay pagos registrados en este período.
+                  No hay pagos registrados.
                 </p>
               ) : (
                 <ul className="mt-2 space-y-1 max-h-44 overflow-auto text-xs text-[var(--text-secondary)]">
                   {ventasPorMetodoPago.map((m) => (
                     <li
                       key={m.metodoPagoId}
-                      className="flex items-center justify-between"
+                      className="flex items-center justify-between min-w-0"
                     >
-                      <span>{m.nombre}</span>
-                      <span className="font-medium">
+                      <span className="truncate">{m.nombre}</span>
+                      <span className="font-medium truncate">
                         {formatearMoneda(m.total)}
                       </span>
                     </li>
@@ -304,51 +296,49 @@ export default async function DashboardPage() {
         {/* Destacados */}
         <div
           className="
-            rounded-xl 
-            border 
-            p-4 
-            backdrop-blur-xl 
-            shadow-[var(--shadow-card)]
-            bg-[var(--bg-card)]
-            border-[var(--border-color)]
+            min-w-0
+            rounded-xl border p-4
+            backdrop-blur-xl shadow-[var(--shadow-card)]
+            bg-[var(--bg-card)] border-[var(--border-color)]
           "
         >
-          <h2 className="text-sm font-semibold text-[var(--text-main)]">
+          <h2 className="text-sm font-semibold text-[var(--text-main)] truncate">
             Destacados del período
           </h2>
 
-          <div className="mt-3 space-y-4 text-xs text-[var(--text-secondary)]">
+          <div className="mt-3 space-y-4 text-xs text-[var(--text-secondary)] min-w-0">
             <div>
-              <p className="font-semibold text-[var(--text-main)]">
+              <p className="font-semibold text-[var(--text-main)] truncate">
                 Producto más vendido
               </p>
+
               {topProducto ? (
-                <p className="mt-1">
+                <p className="mt-1 truncate">
                   <span className="font-medium">{topProducto.nombre}</span> ·{' '}
                   {topProducto.cantidadVendida} unidades ·{' '}
                   {formatearMoneda(topProducto.montoTotal)}
                 </p>
               ) : (
                 <p className="mt-1">
-                  Aún no hay datos de productos vendidos en este período.
+                  No hay datos de productos vendidos.
                 </p>
               )}
             </div>
 
             <div>
-              <p className="font-semibold text-[var(--text-main)]">
+              <p className="font-semibold text-[var(--text-main)] truncate">
                 Mejor mesero / usuario
               </p>
+
               {topMesero ? (
-                <p className="mt-1">
+                <p className="mt-1 truncate">
                   <span className="font-medium">{topMesero.nombre}</span> ·{' '}
                   {topMesero.totalPedidos} pedidos ·{' '}
                   {formatearMoneda(topMesero.totalVentas)}
                 </p>
               ) : (
                 <p className="mt-1">
-                  Aún no hay datos suficientes para mostrar un ranking de
-                  usuarios.
+                  No hay datos suficientes para ranking de usuarios.
                 </p>
               )}
             </div>

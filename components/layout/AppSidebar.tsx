@@ -50,23 +50,23 @@ export default function AppSidebar() {
 
   return (
     <>
-      {/* ========= SIDEBAR DESKTOP (colapsable) ========= */}
+      {/* ========= SIDEBAR DESKTOP ========= */}
       <aside
         className={`
           hidden md:flex flex-col
           border-r border-[var(--border-color)]
-          bg-[var(--bg-card)]/90
+          bg-[var(--bg-card)]/95
           backdrop-blur-xl
           text-[var(--text-secondary)]
           transition-all duration-300
           ${sidebarCollapsed ? 'w-16' : 'w-56'}
         `}
       >
-        {/* Botón colapsar/expandir */}
+        {/* Botón colapsar */}
         <div className="p-2 flex justify-end">
           <button
             onClick={toggleSidebarCollapsed}
-            className="p-1 rounded-lg hover:bg-[var(--bg-main)]/80 transition"
+            className="p-2 rounded-lg hover:bg-[var(--bg-main)]/80 transition"
           >
             {sidebarCollapsed ? <ChevronRight size={18} /> : <ChevronLeft size={18} />}
           </button>
@@ -81,7 +81,8 @@ export default function AppSidebar() {
                 key={item.href}
                 href={item.href}
                 className={`
-                  flex items-center gap-3 px-3 py-2 rounded-[var(--radius-md)]
+                  flex items-center gap-3 px-3 py-2 min-w-0
+                  rounded-[var(--radius-md)]
                   text-sm transition-colors
                   ${active
                     ? 'bg-[var(--accent-primary)] text-white'
@@ -90,23 +91,27 @@ export default function AppSidebar() {
                 `}
               >
                 {item.icon}
-                {!sidebarCollapsed && <span>{item.label}</span>}
+                {!sidebarCollapsed && (
+                  <span className="truncate">{item.label}</span>
+                )}
               </Link>
             );
           })}
         </nav>
       </aside>
 
-      {/* ========= SIDEBAR MÓVIL (drawer) ========= */}
+      {/* ========= SIDEBAR MÓVIL ========= */}
       <AnimatePresence>
         {sidebarOpen && (
           <>
             {/* Overlay */}
             <motion.div
               initial={{ opacity: 0 }}
-              animate={{ opacity: 0.5 }}   // ⭐ Intermedio, funciona bien en claro/oscuro
+              animate={{ opacity: 0.5 }}
               exit={{ opacity: 0 }}
-              className="fixed inset-0 z-40 bg-black"
+              className="
+                fixed inset-0 z-40 bg-black pointer-events-auto
+              "
               onClick={() => setSidebarOpen(false)}
             />
 
@@ -118,14 +123,10 @@ export default function AppSidebar() {
               className="
                 fixed top-0 left-0 z-50
                 h-full w-64
-
-                bg-[var(--bg-card)]/90
-                backdrop-blur-xl
-
+                bg-[var(--bg-card)]/95 backdrop-blur-xl
                 border-r border-[var(--border-color)]
                 shadow-[0_10px_40px_rgba(0,0,0,0.5)]
-
-                px-4 pt-5 pb-4
+                px-3 pt-5 pb-4
                 flex flex-col
               "
             >
@@ -143,7 +144,9 @@ export default function AppSidebar() {
                       href={item.href}
                       onClick={() => setSidebarOpen(false)}
                       className={`
-                        flex items-center gap-3 px-3 py-2 rounded-[var(--radius-md)]
+                        flex items-center gap-3 px-3 py-2
+                        min-w-0
+                        rounded-[var(--radius-md)]
                         text-sm transition-colors
                         ${active
                           ? 'bg-[var(--accent-primary)] text-white'
@@ -152,7 +155,7 @@ export default function AppSidebar() {
                       `}
                     >
                       {item.icon}
-                      <span>{item.label}</span>
+                      <span className="truncate">{item.label}</span>
                     </Link>
                   );
                 })}

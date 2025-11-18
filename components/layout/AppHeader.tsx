@@ -4,7 +4,7 @@
 import React from 'react';
 import Image from 'next/image';
 import { useAuth } from '@/context/AuthContext';
-import { LogOut, Menu, RefreshCcw } from 'lucide-react';
+import { LogOut, Menu } from 'lucide-react';
 import ThemeToggle from '@/components/ThemeToggle';
 import { useUI } from '@/context/UIContext';
 
@@ -12,30 +12,24 @@ export default function AppHeader() {
   const { usuario, cerrarSesion, cargando } = useAuth();
   const { setSidebarOpen } = useUI();
 
-  // 🔥 Función que limpia el caché + SW + recarga dura
   const hardRefresh = async () => {
     try {
-      // 1. Borrar Cache Storage
       if ('caches' in window) {
         const names = await caches.keys();
         await Promise.all(names.map((name) => caches.delete(name)));
       }
 
-      // 2. Borrar Service Workers
       if ('serviceWorker' in navigator) {
         const regs = await navigator.serviceWorker.getRegistrations();
         for (const reg of regs) await reg.unregister();
       }
 
-      // 3. Forzar recarga SIN caché
       window.location.replace(window.location.href);
-
     } catch (err) {
       console.error('Error limpiando caché:', err);
       window.location.reload();
     }
   };
-
 
   return (
     <header
@@ -47,7 +41,15 @@ export default function AppHeader() {
         bg-[var(--bg-header)]
       "
     >
-      <div className="mx-auto max-w-6xl px-4 py-3 flex items-center justify-between gap-4">
+      <div
+        className="
+          w-full
+          max-w-full           /* 🔥 elimina restricción 6xl */
+          px-4 py-3
+          flex items-center justify-between gap-4
+          overflow-hidden       /* 🔥 protege mobile */
+        "
+      >
 
         {/* IZQUIERDA */}
         <div className="flex items-center gap-3">
@@ -69,11 +71,11 @@ export default function AppHeader() {
             <Menu size={18} className="text-[var(--text-main)]" />
           </button>
 
-          {/* 🔥 LOGO (limpia caché al presionar) */}
+          {/* Logo */}
           <button
             onClick={hardRefresh}
             title="Recargar aplicación y limpiar caché"
-            className="relative h-9 w-9 active:scale-95 transition"
+            className="relative h-10 w-10 sm:h-11 sm:w-11 active:scale-95 transition"
           >
             <Image
               src="/images/logo-le-shuke.png"
@@ -90,11 +92,12 @@ export default function AppHeader() {
             />
           </button>
 
-          <div className="flex flex-col">
-            <span className="text-sm font-semibold text-[var(--text-main)]">
+          {/* Nombre app */}
+          <div className="flex flex-col max-w-[150px] sm:max-w-none">
+            <span className="text-sm font-semibold truncate text-[var(--text-main)]">
               Le Shulé App
             </span>
-            <span className="text-xs text-[var(--text-secondary)]">
+            <span className="text-xs truncate text-[var(--text-secondary)]">
               Sistema de control de comandas
             </span>
           </div>
@@ -103,27 +106,28 @@ export default function AppHeader() {
         {/* DERECHA */}
         <div className="flex items-center gap-3 sm:gap-4">
 
+          {/* Usuario */}
           {!cargando && usuario && (
             <div className="hidden sm:block text-right leading-tight">
-              <p className="text-sm font-medium text-[var(--text-main)]">
+              <p className="text-sm font-medium truncate text-[var(--text-main)]">
                 {usuario.nombre}
               </p>
-              <p className="text-xs text-[var(--text-secondary)]">
+              <p className="text-xs text-[var(--text-secondary)] truncate">
                 {usuario.rol}
               </p>
             </div>
           )}
 
-          {/* MODO OSCURO / CLARO */}
+          {/* Modo oscuro */}
           <ThemeToggle />
 
-          {/* CERRAR SESIÓN */}
+          {/* Cerrar sesión */}
           <button
             onClick={cerrarSesion}
             className="
               inline-flex items-center gap-2 
               rounded-full 
-              border px-3 py-1.5
+              border px-2.5 py-2
               text-xs font-medium
               transition-all
               shadow-sm

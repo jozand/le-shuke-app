@@ -17,7 +17,8 @@ export default function DashboardLayout({
         text-[var(--text-main)]
         transition-colors duration-300
         w-full
-        overflow-x-hidden   /* 👈 MÁXIMA IMPORTANCIA */
+        overflow-x-hidden
+        touch-pan-y
       "
     >
       <AppHeader />
@@ -26,25 +27,24 @@ export default function DashboardLayout({
         className="
           flex flex-1
           w-full
-          overflow-x-hidden    /* 👈 Mata cualquier scroll lateral */
+          overflow-x-hidden
         "
       >
-        {/* Sidebar izquierdo */}
         <AppSidebar />
 
-        {/* Contenido central */}
         <main
           className="
             flex-1 
-            w-full         /* 👈 evita que crezca más del viewport */
+            min-w-0     /* 👈 CRÍTICO para iPad horizontal */
+            w-full
             overflow-x-hidden
           "
         >
           <div
             className="
               w-full
-              max-w-full     /* 👈 ELIMINA EL max-w-6xl que rompía todo */
-              px-3 sm:px-4   /* 👈 padding seguro para mobile */
+              max-w-full
+              px-3 sm:px-4
               py-6
               overflow-x-hidden
             "
