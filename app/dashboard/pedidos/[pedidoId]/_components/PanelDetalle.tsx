@@ -7,7 +7,6 @@ import { Loader2, Minus, Plus, Trash2 } from 'lucide-react';
 interface Props {
   detalles: PedidoDetalleDTO[];
   cargando: boolean;
-
   procesandoAccion: boolean;
 
   metodosPago: MetodoPagoDTO[];
@@ -18,8 +17,6 @@ interface Props {
   onEliminarDetalle: (detalle: PedidoDetalleDTO) => void;
 
   total: number;
-
-  /** Clases de order para el layout responsive */
   order: string;
 }
 
@@ -35,17 +32,16 @@ export default function PanelDetalle({
   total,
   order,
 }: Props) {
-
   return (
     <div
       className={`
         rounded-[var(--radius-lg)] border border-[var(--border-color)]
         bg-[var(--bg-card)] shadow-[var(--shadow-card)]
-        p-3 sm:p-4 w-full overflow-x-hidden
+        p-3 sm:p-4 w-full overflow-hidden
         ${order}
       `}
     >
-      {/* Encabezado */}
+      {/* ENCABEZADO */}
       <div className="flex items-center justify-between mb-3">
         <h2 className="text-sm font-semibold text-[var(--text-main)]">
           Detalle de la comanda
@@ -59,17 +55,17 @@ export default function PanelDetalle({
         )}
       </div>
 
-      {/* Si no hay productos */}
+      {/* SIN DETALLES */}
       {detalles.length === 0 ? (
         <p className="text-sm text-[var(--text-secondary)]">
           Aún no has agregado productos.
         </p>
       ) : (
         <>
-          {/* ============================================
-               MÓVIL: CARDS
-          ============================================ */}
-          <div className="md:hidden space-y-3 max-h-[48vh] overflow-y-auto pr-1 w-full overflow-x-hidden">
+          {/* ===========================================
+              MOBILE + IPAD → CARDS (NO TABLA)
+           =========================================== */}
+          <div className="xl:hidden space-y-3 max-h-[60vh] overflow-y-auto pr-1">
             {detalles.map(det => (
               <div
                 key={det.pedidoDetalleId}
@@ -78,7 +74,6 @@ export default function PanelDetalle({
                   bg-[var(--bg-elevated)] p-3 flex flex-col gap-3
                 "
               >
-                {/* Título + total */}
                 <div className="flex justify-between gap-2">
                   <div className="min-w-0">
                     <p className="text-sm font-semibold truncate">
@@ -97,7 +92,6 @@ export default function PanelDetalle({
                   </p>
                 </div>
 
-                {/* Cantidad táctil */}
                 <div className="flex items-center justify-between gap-2">
                   <span className="text-xs text-[var(--text-secondary)]">
                     Cantidad
@@ -110,42 +104,38 @@ export default function PanelDetalle({
                       bg-[var(--bg-elevated)] px-2 py-1
                     "
                   >
-                    {/* - */}
                     <button
                       onClick={() => onCambiarCantidad(det, det.cantidad - 1)}
                       disabled={procesandoAccion}
+                      style={{ width: 32, height: 32 }}
                       className="
                         flex items-center justify-center rounded-full
                         bg-[var(--bg-elevated)] active:bg-[var(--bg-hover)]
                         transition active:scale-95
                       "
-                      style={{ width: 32, height: 32 }}
                     >
                       <Minus className="h-4 w-4" />
                     </button>
 
-                    {/* cantidad */}
                     <span className="w-8 text-center font-semibold">
                       {det.cantidad}
                     </span>
 
-                    {/* + */}
                     <button
                       onClick={() => onCambiarCantidad(det, det.cantidad + 1)}
                       disabled={procesandoAccion}
+                      style={{ width: 32, height: 32 }}
                       className="
                         flex items-center justify-center rounded-full
                         bg-[var(--bg-elevated)] active:bg-[var(--bg-hover)]
                         transition active:scale-95
                       "
-                      style={{ width: 32, height: 32 }}
                     >
                       <Plus className="h-4 w-4" />
                     </button>
                   </div>
                 </div>
 
-                {/* Eliminar */}
                 <button
                   onClick={() => onEliminarDetalle(det)}
                   disabled={procesandoAccion}
@@ -165,43 +155,44 @@ export default function PanelDetalle({
             ))}
           </div>
 
-          {/* ============================================
-               TABLET / PC: TABLA
-          ============================================ */}
+          {/* ===========================================
+              DESKTOP → TABLA COMPLETA
+           =========================================== */}
           <div
             className="
-              hidden md:block
+              hidden xl:block
               max-h-[50vh] overflow-y-auto
-              border border-[var(--border-color)]
               rounded-[var(--radius-md)]
+              border border-[var(--border-color)]
             "
           >
-            <table className="min-w-full text-xs">
+            <table className="w-full text-xs">
               <thead className="bg-[var(--bg-elevated)] sticky top-0 z-10">
                 <tr>
                   <th className="px-2 py-2 text-left font-semibold">Producto</th>
                   <th className="px-2 py-2 text-center font-semibold">Cant.</th>
                   <th className="px-2 py-2 text-right font-semibold">P. Unit.</th>
                   <th className="px-2 py-2 text-right font-semibold">Subtotal</th>
-                  <th className="px-2 py-2 text-center font-semibold">Acciones</th>
+                  <th className="px-2 py-2 text-center font-semibold">Acción</th>
                 </tr>
               </thead>
 
               <tbody>
                 {detalles.map(det => (
-                  <tr key={det.pedidoDetalleId} className="border-t border-[var(--border-color)]">
-                    {/* PRODUCTO */}
-                    <td className="px-2 py-2 align-top">
-                      <p className="font-medium">{det.nombreProducto}</p>
+                  <tr
+                    key={det.pedidoDetalleId}
+                    className="border-t border-[var(--border-color)]"
+                  >
+                    <td className="px-2 py-2 align-top max-w-[150px] truncate">
+                      <p className="font-medium truncate">{det.nombreProducto}</p>
 
                       {det.categoriaNombre && (
-                        <p className="text-[11px] text-[var(--text-muted)]">
+                        <p className="text-[11px] text-[var(--text-muted)] truncate">
                           {det.categoriaNombre}
                         </p>
                       )}
                     </td>
 
-                    {/* CANTIDAD */}
                     <td className="px-2 py-2 text-center">
                       <div
                         className="
@@ -210,49 +201,46 @@ export default function PanelDetalle({
                           bg-[var(--bg-elevated)] px-2 py-1
                         "
                       >
-                        {/* - */}
                         <button
                           onClick={() => onCambiarCantidad(det, det.cantidad - 1)}
                           disabled={procesandoAccion}
+                          style={{ width: 36, height: 36 }}
                           className="
                             flex items-center justify-center rounded-full
                             bg-[var(--bg-elevated)] active:bg-[var(--bg-hover)]
                             transition active:scale-95
                           "
-                          style={{ width: 36, height: 36 }}
                         >
                           <Minus className="h-4 w-4" />
                         </button>
 
-                        <span className="w-8 text-center font-semibold">{det.cantidad}</span>
+                        <span className="w-8 text-center font-semibold">
+                          {det.cantidad}
+                        </span>
 
-                        {/* + */}
                         <button
                           onClick={() => onCambiarCantidad(det, det.cantidad + 1)}
                           disabled={procesandoAccion}
+                          style={{ width: 36, height: 36 }}
                           className="
                             flex items-center justify-center rounded-full
                             bg-[var(--bg-elevated)] active:bg-[var(--bg-hover)]
                             transition active:scale-95
                           "
-                          style={{ width: 36, height: 36 }}
                         >
                           <Plus className="h-4 w-4" />
                         </button>
                       </div>
                     </td>
 
-                    {/* PRECIO */}
                     <td className="px-2 py-2 text-right">
                       Q {det.precioUnitario.toFixed(2)}
                     </td>
 
-                    {/* SUBTOTAL */}
                     <td className="px-2 py-2 text-right">
                       Q {(det.subtotal ?? det.cantidad * det.precioUnitario).toFixed(2)}
                     </td>
 
-                    {/* ELIMINAR */}
                     <td className="px-2 py-2 text-center">
                       <button
                         onClick={() => onEliminarDetalle(det)}
@@ -275,15 +263,11 @@ export default function PanelDetalle({
             </table>
           </div>
 
-          {/* ============================================
-               MÉTODO DE PAGO
-          ============================================ */}
+          {/* MÉTODO DE PAGO */}
           <div className="space-y-2 mt-4">
-            <div className="flex items-center justify-between">
-              <span className="text-sm font-medium text-[var(--text-secondary)]">
-                Método de pago
-              </span>
-            </div>
+            <span className="text-sm font-medium text-[var(--text-secondary)]">
+              Método de pago
+            </span>
 
             <div className="flex flex-wrap gap-2">
               {metodosPago.map(mp => (
@@ -308,25 +292,16 @@ export default function PanelDetalle({
                     onChange={() => setMetodoPagoSeleccionadoId(mp.metodoPagoId)}
                   />
                   <span className="font-medium">{mp.nombre}</span>
-
-                  {mp.descripcion && (
-                    <span className="text-[10px] text-[var(--text-muted)]">
-                      {mp.descripcion}
-                    </span>
-                  )}
                 </label>
               ))}
             </div>
           </div>
 
-          {/* ============================================
-               TOTAL
-          ============================================ */}
+          {/* TOTAL */}
           <div className="flex items-center justify-between pt-3 mt-3 border-t border-[var(--border-color)]">
             <span className="text-sm font-medium text-[var(--text-secondary)]">
               Total
             </span>
-
             <span className="text-xl font-semibold text-[var(--text-main)]">
               Q {total.toFixed(2)}
             </span>

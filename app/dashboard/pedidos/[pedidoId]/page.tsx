@@ -43,7 +43,6 @@ export default function PedidoPage() {
         overflow-x-hidden space-y-4
       "
     >
-      {/* ENCABEZADO */}
       <Encabezado
         pedidoId={pedidoId}
         detalles={detalles}
@@ -53,23 +52,20 @@ export default function PedidoPage() {
         onFinalizar={handleFinalizarPedido}
       />
 
-      {error && (
-        <p className="text-sm text-red-400">{error}</p>
-      )}
+      {error && <p className="text-sm text-red-400">{error}</p>}
 
-      {/* ================================
-          LAYOUT RESPONSIVE PROFESIONAL
-         ================================= */}
+      {/* ===========================
+          LAYOUT POS EN DOS COLUMNAS
+         =========================== */}
 
       <div
         className="
-          grid gap-4 
-          md:grid-cols-2 
-          lg:grid-cols-[minmax(0,1fr)_minmax(0,1fr)]
+          grid gap-4
+          sm:grid-cols-[minmax(0,1fr)_360px]   /* 2 columnas desde 640px */
+          xl:grid-cols-[minmax(0,1fr)_420px]   /* desktop ancho panel */
           w-full overflow-x-hidden
         "
       >
-        {/* 🔵 MÓVIL: catálogo primero – PC/tablet: se reordena con order */}
         <PanelCatalogo
           catalogo={catalogo}
           categoriaActivaId={categoriaActivaId}
@@ -79,7 +75,7 @@ export default function PedidoPage() {
           cambiarCantidadCatalogo={cambiarCantidadCatalogo}
           setCantidadCatalogoDirecto={setCantidadCatalogoDirecto}
           onAgregarProducto={handleAgregarProducto}
-          order={"order-1 md:order-1 lg:order-1"}
+          order="order-1"
         />
 
         <PanelDetalle
@@ -92,11 +88,11 @@ export default function PedidoPage() {
           onCambiarCantidad={handleCambiarCantidad}
           onEliminarDetalle={handleEliminarDetalle}
           total={total}
-          order={"order-2 md:order-2 lg:order-2"}
+          order="order-2"
         />
       </div>
 
-      {/* TOTAL STICKY – Móvil */}
+      {/* TOTAL SOLO EN MOBILE */}
       <div
         className="
           fixed bottom-0 left-0 right-0 

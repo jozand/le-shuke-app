@@ -16,17 +16,14 @@ export default function AppHeader() {
     try {
       if ('caches' in window) {
         const names = await caches.keys();
-        await Promise.all(names.map((name) => caches.delete(name)));
+        await Promise.all(names.map(name => caches.delete(name)));
       }
-
       if ('serviceWorker' in navigator) {
         const regs = await navigator.serviceWorker.getRegistrations();
         for (const reg of regs) await reg.unregister();
       }
-
       window.location.replace(window.location.href);
-    } catch (err) {
-      console.error('Error limpiando caché:', err);
+    } catch {
       window.location.reload();
     }
   };
@@ -34,47 +31,47 @@ export default function AppHeader() {
   return (
     <header
       className="
-        w-full 
-        border-b 
-        backdrop-blur-xl
-        border-[var(--border-color)]
+        w-full
+        border-b
         bg-[var(--bg-header)]
+        border-[var(--border-color)]
+        backdrop-blur-xl
+        flex items-center
+        min-h-[64px]          /* 🔥 evita que nada se recorte */
+        z-50
       "
     >
       <div
         className="
-          w-full
-          max-w-full           /* 🔥 elimina restricción 6xl */
-          px-4 py-3
-          flex items-center justify-between gap-4
-          overflow-hidden       /* 🔥 protege mobile */
+          flex items-center justify-between
+          w-full max-w-full
+          px-4
+          py-2                /* 🔥 padding suave para móvil */
+          sm:py-3             /* 🔥 más espacio en tablet/pc */
+          gap-4
         "
       >
-
         {/* IZQUIERDA */}
-        <div className="flex items-center gap-3">
+        <div className="flex items-center gap-3 min-w-0">
 
-          {/* Botón menú móvil */}
+          {/* MENU MOBILE */}
           <button
-            className="
-              md:hidden 
-              mr-1 
-              p-2 
-              rounded-lg 
-              hover:bg-[var(--bg-card)] 
-              border border-transparent 
-              hover:border-[var(--border-color)]
-              transition
-            "
             onClick={() => setSidebarOpen(true)}
+            className="
+              md:hidden p-2 mr-1
+              rounded-lg transition
+              hover:bg-[var(--bg-card)]
+              border border-transparent
+              hover:border-[var(--border-color)]
+            "
           >
-            <Menu size={18} className="text-[var(--text-main)]" />
+            <Menu size={20} className="text-[var(--text-main)]" />
           </button>
 
-          {/* Logo */}
+          {/* LOGO */}
           <button
             onClick={hardRefresh}
-            title="Recargar aplicación y limpiar caché"
+            title="Recargar aplicación"
             className="relative h-10 w-10 sm:h-11 sm:w-11 active:scale-95 transition"
           >
             <Image
@@ -82,18 +79,15 @@ export default function AppHeader() {
               alt="Le Shulé App"
               fill
               className="
-                rounded-full 
-                object-contain 
-                shadow-md 
-                ring-2 
-                bg-white/80 
-                ring-[var(--border-color)]
+                object-contain rounded-full shadow-md
+                ring-2 ring-[var(--border-color)]
+                bg-white/80
               "
             />
           </button>
 
-          {/* Nombre app */}
-          <div className="flex flex-col max-w-[150px] sm:max-w-none">
+          {/* TEXTOS */}
+          <div className="flex flex-col truncate min-w-0">
             <span className="text-sm font-semibold truncate text-[var(--text-main)]">
               Le Shulé App
             </span>
@@ -104,11 +98,10 @@ export default function AppHeader() {
         </div>
 
         {/* DERECHA */}
-        <div className="flex items-center gap-3 sm:gap-4">
+        <div className="flex items-center gap-2 sm:gap-4">
 
-          {/* Usuario */}
           {!cargando && usuario && (
-            <div className="hidden sm:block text-right leading-tight">
+            <div className="hidden sm:block text-right truncate">
               <p className="text-sm font-medium truncate text-[var(--text-main)]">
                 {usuario.nombre}
               </p>
@@ -118,19 +111,16 @@ export default function AppHeader() {
             </div>
           )}
 
-          {/* Modo oscuro */}
           <ThemeToggle />
 
-          {/* Cerrar sesión */}
+          {/* CERRAR SESIÓN */}
           <button
             onClick={cerrarSesion}
+            title="Cerrar sesión"
             className="
-              inline-flex items-center gap-2 
-              rounded-full 
-              border px-2.5 py-2
-              text-xs font-medium
+              flex items-center justify-center
+              rounded-full border shadow-sm
               transition-all
-              shadow-sm
 
               border-[var(--border-color)]
               bg-[var(--bg-card)]
@@ -139,12 +129,19 @@ export default function AppHeader() {
               hover:bg-[var(--accent-primary)]
               hover:text-white
               hover:border-transparent
+
+              w-10 h-10 p-0            /* 🔥 móvil: icono perfecto */
+
+              sm:w-auto sm:h-auto      /* 🔥 escritorio: botón completo */
+              sm:px-3 sm:py-2 sm:gap-2
             "
-            title="Cerrar sesión"
           >
-            <LogOut size={14} />
-            <span className="hidden sm:inline">Cerrar sesión</span>
+            <LogOut size={18} />
+            <span className="hidden sm:inline text-xs font-medium">
+              Cerrar sesión
+            </span>
           </button>
+
         </div>
       </div>
     </header>

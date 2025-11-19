@@ -14,9 +14,9 @@ export default function ThemeToggle() {
       <button onClick={() => setTema('dark')}>
         <Moon size={18} className={tema === 'dark' ? 'text-blue-400' : 'text-slate-300'} />
       </button>
-      <button onClick={() => setTema('system')}>
+      {/*<button onClick={() => setTema('system')}>
         <Monitor size={18} className={tema === 'system' ? 'text-green-400' : 'text-slate-300'} />
-      </button>
+      </button>*/}
     </div>
   );
 }

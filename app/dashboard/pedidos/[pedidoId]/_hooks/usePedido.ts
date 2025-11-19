@@ -14,6 +14,8 @@ import {
   type MetodoPagoDTO,
 } from '@/app/lib/admin-api';
 import { useToast } from '@/context/ToastContext';
+import { useRouter } from "next/navigation";
+
 
 export function usePedido(pedidoId: number) {
   const { showToast } = useToast();
@@ -34,7 +36,7 @@ export function usePedido(pedidoId: number) {
   const [procesandoAccion, setProcesandoAccion] = useState(false);
   const [finalizando, setFinalizando] = useState(false);
   const [error, setError] = useState<string | null>(null);
-
+  const router = useRouter();
   // 🔵 TOTAL
   const total = useMemo(
     () =>
@@ -282,6 +284,7 @@ export function usePedido(pedidoId: number) {
 
     try {
       setFinalizando(true);
+
       await finalizarPedido(pedidoId, metodoPagoSeleccionadoId);
 
       showToast({
@@ -289,6 +292,10 @@ export function usePedido(pedidoId: number) {
         title: 'Pedido finalizado',
         message: 'La comanda se finalizó correctamente.',
       });
+
+      // 🚀 REDIRECCIÓN AUTOMÁTICA A MESAS
+      router.push('/dashboard/mesas');
+
     } catch (err) {
       const msg = err instanceof Error ? err.message : 'No se pudo finalizar.';
       showToast({ type: 'error', title: 'Error', message: msg });
@@ -296,6 +303,7 @@ export function usePedido(pedidoId: number) {
       setFinalizando(false);
     }
   }
+
 
   return {
     // estado

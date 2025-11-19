@@ -50,3 +50,9 @@ npm run prisma:seed
 npx prisma generate
 
 docker exec -it le_shuke_app sh -c "npm run prisma:seed"
+
+
+docker run -d --name le_shuke_mysql -e MYSQL_ROOT_PASSWORD=password -e MYSQL_DATABASE=le_shuke_db -p 3306:3306 mysql:8.0
+npx prisma generate
+npx prisma migrate deploy
+npm run prisma:seed
