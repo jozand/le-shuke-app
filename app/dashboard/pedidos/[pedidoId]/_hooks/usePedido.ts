@@ -14,20 +14,29 @@ import {
   type MetodoPagoDTO,
 } from '@/app/lib/admin-api';
 import { useToast } from '@/context/ToastContext';
-import { useRouter } from "next/navigation";
+import { useRouter } from 'next/navigation';
 
+// ⭐ IMPORTACIÓN ESTRICTA DE TIPOS PDFMAKE (corrección final)
+import type { PdfMakeStatic, TDocumentDefinitions } from "pdfmake/build/pdfmake";
 
+//-------------------------------------------------------
+// HOOK PRINCIPAL
+//-------------------------------------------------------
 export function usePedido(pedidoId: number) {
   const { showToast } = useToast();
+  const router = useRouter();
 
   const [catalogo, setCatalogo] = useState<CategoriaConProductosDTO[]>([]);
   const [detalles, setDetalles] = useState<PedidoDetalleDTO[]>([]);
   const [metodosPago, setMetodosPago] = useState<MetodoPagoDTO[]>([]);
 
   const [categoriaActivaId, setCategoriaActivaId] = useState<number | null>(null);
-  const [metodoPagoSeleccionadoId, setMetodoPagoSeleccionadoId] = useState<number | null>(null);
+  const [metodoPagoSeleccionadoId, setMetodoPagoSeleccionadoId] =
+    useState<number | null>(null);
 
-  const [cantidadesCatalogo, setCantidadesCatalogo] = useState<Record<number, number>>({});
+  const [cantidadesCatalogo, setCantidadesCatalogo] = useState<
+    Record<number, number>
+  >({});
 
   const [cargandoCatalogo, setCargandoCatalogo] = useState(false);
   const [cargandoDetalles, setCargandoDetalles] = useState(false);
@@ -36,8 +45,10 @@ export function usePedido(pedidoId: number) {
   const [procesandoAccion, setProcesandoAccion] = useState(false);
   const [finalizando, setFinalizando] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const router = useRouter();
-  // 🔵 TOTAL
+
+  //-------------------------------------------------------
+  // TOTAL
+  //-------------------------------------------------------
   const total = useMemo(
     () =>
       detalles.reduce(
@@ -50,9 +61,9 @@ export function usePedido(pedidoId: number) {
   const cargandoTodo =
     cargandoCatalogo || cargandoDetalles || (!catalogo.length && !detalles.length);
 
-  // ======================================================
-  //  Helpers de cantidades (catálogo)
-  // ======================================================
+  //-------------------------------------------------------
+  // Helpers cantidades
+  //-------------------------------------------------------
   function getCantidadCatalogo(id: number) {
     return cantidadesCatalogo[id] ?? 1;
   }
@@ -73,9 +84,9 @@ export function usePedido(pedidoId: number) {
     }));
   }
 
-  // ======================================================
-  //  Cargar datos
-  // ======================================================
+  //-------------------------------------------------------
+  // Cargar datos
+  //-------------------------------------------------------
   async function cargarCatalogo() {
     try {
       setCargandoCatalogo(true);
@@ -113,15 +124,17 @@ export function usePedido(pedidoId: number) {
       if (data.length === 1) {
         setMetodoPagoSeleccionadoId(data[0].metodoPagoId);
       }
-    } catch (err) {
-      const msg = err instanceof Error ? err.message : 'Error al cargar métodos de pago';
-      showToast({ type: 'error', title: 'Error', message: msg });
+    } catch {
+      showToast({
+        type: 'error',
+        title: 'Error',
+        message: 'Error al cargar métodos de pago',
+      });
     } finally {
       setCargandoMetodosPago(false);
     }
   }
 
-  // ============ Cargar todo al inicio ============
   useEffect(() => {
     if (!pedidoId || Number.isNaN(pedidoId)) return;
 
@@ -131,16 +144,15 @@ export function usePedido(pedidoId: number) {
     cargarMetodosPago();
   }, [pedidoId]);
 
-  // ============ Seleccionar categoría por defecto ============
   useEffect(() => {
     if (catalogo.length > 0 && categoriaActivaId === null) {
       setCategoriaActivaId(catalogo[0].categoriaId);
     }
   }, [catalogo, categoriaActivaId]);
 
-  // ======================================================
-  //  Acciones: agregar, cambiar cantidad, eliminar
-  // ======================================================
+  //-------------------------------------------------------
+  // Acciones CRUD
+  //-------------------------------------------------------
   async function handleAgregarProducto(
     productoId: number,
     nombre: string,
@@ -167,7 +179,7 @@ export function usePedido(pedidoId: number) {
         message: `Se agregaron ${cantidad} unidad(es) de "${nombre}".`,
       });
     } catch (err) {
-      const msg = err instanceof Error ? err.message : 'No se pudo agregar el producto.';
+      const msg = err instanceof Error ? err.message : 'No se pudo agregar.';
       showToast({ type: 'error', title: 'Error', message: msg });
     } finally {
       setProcesandoAccion(false);
@@ -186,18 +198,15 @@ export function usePedido(pedidoId: number) {
         });
       });
 
-      if (!confirmar) return;
-      return handleEliminarDetalle(detalle);
+      if (!confirmar) return handleEliminarDetalle(detalle);
     }
 
     try {
       setProcesandoAccion(true);
-
       await actualizarCantidadDetalle({
         pedidoDetalleId: detalle.pedidoDetalleId,
         cantidad: nuevaCantidad,
       });
-
       await cargarDetalles();
 
       showToast({
@@ -218,7 +227,7 @@ export function usePedido(pedidoId: number) {
       showToast({
         type: 'confirm',
         title: 'Eliminar producto',
-        message: `¿Eliminar "${detalle.nombreProducto}" de la comanda?`,
+        message: `¿Eliminar "${detalle.nombreProducto}"?`,
         onConfirm: () => resolve(true),
         onCancel: () => resolve(false),
       });
@@ -244,9 +253,9 @@ export function usePedido(pedidoId: number) {
     }
   }
 
-  // ======================================================
-  //  Finalizar pedido
-  // ======================================================
+  //-------------------------------------------------------
+  // Finalizar pedido
+  //-------------------------------------------------------
   async function handleFinalizarPedido() {
     if (!pedidoId) return;
 
@@ -284,7 +293,6 @@ export function usePedido(pedidoId: number) {
 
     try {
       setFinalizando(true);
-
       await finalizarPedido(pedidoId, metodoPagoSeleccionadoId);
 
       showToast({
@@ -293,9 +301,7 @@ export function usePedido(pedidoId: number) {
         message: 'La comanda se finalizó correctamente.',
       });
 
-      // 🚀 REDIRECCIÓN AUTOMÁTICA A MESAS
       router.push('/dashboard/mesas');
-
     } catch (err) {
       const msg = err instanceof Error ? err.message : 'No se pudo finalizar.';
       showToast({ type: 'error', title: 'Error', message: msg });
@@ -304,9 +310,198 @@ export function usePedido(pedidoId: number) {
     }
   }
 
+  //-------------------------------------------------------
+  // Helpers PDF
+  //-------------------------------------------------------
+  async function obtenerBase64(ruta: string): Promise<string> {
+    const blob = await fetch(ruta).then(res => res.blob());
+    return new Promise(resolve => {
+      const reader = new FileReader();
+      reader.onload = () => resolve(reader.result as string);
+      reader.readAsDataURL(blob);
+    });
+  }
 
+  function imprimirPDF(pdfMake: PdfMakeStatic, docDefinition: TDocumentDefinitions) {
+    const pdf = pdfMake.createPdf(docDefinition);
+
+    pdf.getBlob((blob: Blob) => {
+      const url = URL.createObjectURL(blob);
+      const win = window.open(url);
+
+      if (!win) return;
+      win.onload = () => {
+        win.focus();
+        win.print();
+      };
+    });
+  }
+
+  //-------------------------------------------------------
+  // IMPRIMIR COMANDA
+  //-------------------------------------------------------
+  async function imprimirComanda() {
+    try {
+      if (!detalles.length) {
+        return showToast({
+          type: 'warning',
+          title: 'Sin productos',
+          message: 'No hay productos para imprimir.',
+        });
+      }
+
+      const { default: pdfMake } = await import('pdfmake/build/pdfmake');
+      const fonts = await import('pdfmake/build/vfs_fonts');
+
+      pdfMake.vfs = fonts.vfs;
+
+      const logoBase64 = await obtenerBase64('/images/logo-le-shuke.png');
+
+      // 🔥 QR ÚNICO PARA LA COMANDA
+      const qrValue = `COMANDA-${pedidoId}-${Date.now()}`;
+
+      const doc: TDocumentDefinitions = {
+        pageSize: { width: 226, height: 'auto' },
+        pageMargins: [10, 10, 10, 10],
+        content: [
+          // LOGO
+          { image: logoBase64, width: 80, alignment: 'center', margin: [0, 0, 0, 10] },
+
+          // TITULO
+          { text: 'COMANDA - COCINA', alignment: 'center', bold: true, fontSize: 14 },
+          { text: `Pedido #${pedidoId}`, alignment: 'center', margin: [0, 0, 0, 10] },
+
+          // TABLA DE PRODUCTOS
+          {
+            table: {
+              widths: ['auto', '*', 'auto'],
+              body: [
+                [
+                  { text: 'Cant', bold: true },
+                  { text: 'Producto', bold: true },
+                  { text: 'Subtotal', bold: true }
+                ],
+                ...detalles.map(d => [
+                  d.cantidad.toString(),
+                  d.nombreProducto,
+                  `Q ${(d.subtotal ?? 0).toFixed(2)}`
+                ])
+              ]
+            },
+            layout: 'lightHorizontalLines',
+            margin: [0, 10, 0, 10]
+          },
+
+          // TOTAL
+          {
+            text: `Total: Q ${total.toFixed(2)}`,
+            alignment: 'right',
+            bold: true,
+            fontSize: 14,
+            margin: [0, 0, 0, 10]
+          },
+
+          // 🔥 **QR AÑADIDO**
+          { qr: qrValue, fit: 80, alignment: 'center', margin: [0, 10] }
+        ]
+      };
+
+      imprimirPDF(pdfMake, doc);
+    } catch (e) {
+      console.error('Error imprimir comanda:', e);
+      showToast({
+        type: 'error',
+        title: 'Error',
+        message: 'No se pudo imprimir.',
+      });
+    }
+  }
+
+
+  //-------------------------------------------------------
+  // IMPRIMIR TICKET CLIENTE
+  //-------------------------------------------------------
+  async function imprimirTicketCliente() {
+    try {
+      if (!detalles.length) {
+        return showToast({
+          type: 'warning',
+          title: 'Sin productos',
+          message: 'No hay productos para imprimir.',
+        });
+      }
+
+      const { default: pdfMake } = await import('pdfmake/build/pdfmake');
+      const fonts = await import('pdfmake/build/vfs_fonts');
+
+      pdfMake.vfs = fonts.vfs;
+
+      const logoBase64 = await obtenerBase64('/images/logo-le-shuke.png');
+      const qrValue = `${pedidoId}-${Date.now()}`;
+
+
+      const doc: TDocumentDefinitions = {
+        pageSize: { width: 226, height: 'auto' },
+        pageMargins: [10, 10, 10, 10],
+        content: [
+          { image: logoBase64, width: 80, alignment: 'center', margin: [0, 0, 0, 10] },
+          { text: 'COMANDA - COCINA', alignment: 'center', bold: true, fontSize: 14 },
+          { text: `Pedido #${pedidoId}`, alignment: 'center', margin: [0, 0, 0, 10] },
+
+          /* TABLA */
+          {
+            table: {
+              widths: ['auto', '*', 'auto'],
+              body: [
+                [
+                  { text: 'Cant', bold: true },
+                  { text: 'Producto', bold: true },
+                  { text: 'Subtotal', bold: true },
+                ],
+                ...detalles.map(d => [
+                  d.cantidad.toString(),
+                  d.nombreProducto,
+                  `Q ${(d.subtotal ?? 0).toFixed(2)}`,
+                ]),
+              ],
+            },
+            layout: 'lightHorizontalLines',
+            margin: [0, 10, 0, 10],
+          },
+
+          /* TOTAL */
+          {
+            text: `Total: Q ${total.toFixed(2)}`,
+            alignment: 'right',
+            bold: true,
+            fontSize: 14,
+          },
+
+          /* QR AÑADIDO */
+          {
+            qr: qrValue,
+            fit: 70,
+            alignment: 'center',
+            margin: [0, 10, 0, 0],
+          },
+        ],
+      };
+
+      imprimirPDF(pdfMake, doc);
+    } catch (e) {
+      console.error('Error imprimir ticket:', e);
+      showToast({
+        type: 'error',
+        title: 'Error',
+        message: 'No se pudo imprimir.',
+      });
+    }
+  }
+
+  //-------------------------------------------------------
+  // RETURN
+  //-------------------------------------------------------
   return {
-    // estado
     catalogo,
     detalles,
     categoriaActivaId,
@@ -316,21 +511,17 @@ export function usePedido(pedidoId: number) {
     setMetodoPagoSeleccionadoId,
     total,
     error,
-
-    // loading
     cargandoTodo,
     procesandoAccion,
     finalizando,
-
-    // helpers cantidades
     getCantidadCatalogo,
     cambiarCantidadCatalogo,
     setCantidadCatalogoDirecto,
-
-    // acciones
     handleAgregarProducto,
     handleCambiarCantidad,
     handleEliminarDetalle,
     handleFinalizarPedido,
+    imprimirComanda,
+    imprimirTicketCliente,
   };
 }

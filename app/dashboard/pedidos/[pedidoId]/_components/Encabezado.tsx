@@ -2,7 +2,7 @@
 
 import React from 'react';
 import { useRouter } from 'next/navigation';
-import { ArrowLeft, CheckCircle2, Loader2 } from 'lucide-react';
+import { ArrowLeft, CheckCircle2, Loader2, Printer } from 'lucide-react';
 import type { PedidoDetalleDTO } from '@/app/lib/admin-api';
 
 interface Props {
@@ -12,6 +12,7 @@ interface Props {
   procesandoAccion: boolean;
   metodoPagoSeleccionadoId: number | null;
   onFinalizar: () => void;
+  onImprimir: () => void;
 }
 
 export default function Encabezado({
@@ -21,6 +22,7 @@ export default function Encabezado({
   procesandoAccion,
   metodoPagoSeleccionadoId,
   onFinalizar,
+  onImprimir,
 }: Props) {
   const router = useRouter();
 
@@ -40,8 +42,6 @@ export default function Encabezado({
         w-full sm:w-auto 
         min-w-0 flex-1
       ">
-
-        {/* Botón Volver */}
         <button
           type="button"
           onClick={() => router.push('/dashboard/mesas')}
@@ -63,64 +63,72 @@ export default function Encabezado({
           <span className="hidden xs:inline">Volver</span>
         </button>
 
-        {/* Títulos */}
         <div className="min-w-0 flex-1">
-          <h1
-            className="
-              text-lg sm:text-2xl font-bold 
-              text-[var(--text-main)] 
-              truncate
-            "
-          >
+          <h1 className="text-lg sm:text-2xl font-bold text-[var(--text-main)] truncate">
             Comanda #{pedidoId}
           </h1>
 
-          <p
-            className="
-              mt-1 text-xs sm:text-sm
-              text-[var(--text-secondary)]
-              truncate
-            "
-          >
+          <p className="mt-1 text-xs sm:text-sm text-[var(--text-secondary)] truncate">
             Toca, suma, resta y finaliza fácilmente.
           </p>
         </div>
       </div>
 
-      {/* DERECHA: FINALIZAR */}
-      <button
-        type="button"
-        onClick={onFinalizar}
-        disabled={
-          finalizando ||
-          procesandoAccion ||
-          detalles.length === 0 ||
-          !metodoPagoSeleccionadoId
-        }
-        className="
-          inline-flex items-center justify-center
-          gap-2
-          rounded-[var(--radius-md)]
-          bg-emerald-500 
-          px-4 sm:px-6 py-2.5
-          text-sm font-semibold text-white
-          hover:bg-emerald-600
-          disabled:opacity-50 disabled:cursor-not-allowed
-          active:scale-[0.98]
-          transition
-          w-full sm:w-auto
-          touch-manipulation
-          shrink-0
-        "
-      >
-        {finalizando ? (
-          <Loader2 className="h-4 w-4 animate-spin" />
-        ) : (
-          <CheckCircle2 className="h-4 w-4" />
-        )}
+      {/* DERECHA – SOLO PC/IPAD */}
+      <div className="hidden sm:flex items-center gap-3">
 
-        Finalizar
-      </button>
+        {/* Botón Imprimir */}
+        <button
+          type="button"
+          onClick={onImprimir}
+          disabled={detalles.length === 0}
+          className="
+            inline-flex items-center justify-center
+            gap-2
+            rounded-[var(--radius-md)]
+            bg-sky-500 
+            px-5 py-2.5
+            text-sm font-semibold text-white
+            hover:bg-sky-600
+            disabled:opacity-50 disabled:cursor-not-allowed
+            active:scale-[0.97] transition
+          "
+        >
+          <Printer className="h-4 w-4" />
+          Imprimir
+        </button>
+
+        {/* Botón Finalizar */}
+        <button
+          type="button"
+          onClick={onFinalizar}
+          disabled={
+            finalizando ||
+            procesandoAccion ||
+            detalles.length === 0 ||
+            !metodoPagoSeleccionadoId
+          }
+          className="
+            inline-flex items-center justify-center
+            gap-2
+            rounded-[var(--radius-md)]
+            bg-emerald-500 
+            px-5 py-2.5
+            text-sm font-semibold text-white
+            hover:bg-emerald-600
+            disabled:opacity-50 disabled:cursor-not-allowed
+            active:scale-[0.97] transition
+          "
+        >
+          {finalizando ? (
+            <Loader2 className="h-4 w-4 animate-spin" />
+          ) : (
+            <CheckCircle2 className="h-4 w-4" />
+          )}
+          Finalizar
+        </button>
+
+      </div>
     </div>
   );
 }

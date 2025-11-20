@@ -32,6 +32,7 @@ export default function PedidoPage() {
     getCantidadCatalogo,
     cambiarCantidadCatalogo,
     setCantidadCatalogoDirecto,
+    imprimirComanda
   } = usePedido(pedidoId);
 
   return (
@@ -39,7 +40,7 @@ export default function PedidoPage() {
       className="
         w-full max-w-full 
         px-3 sm:px-4 
-        pb-24 pt-2 sm:pt-4 
+        pb-28 pt-2 sm:pt-4 
         overflow-x-hidden space-y-4
       "
     >
@@ -50,19 +51,16 @@ export default function PedidoPage() {
         procesandoAccion={procesandoAccion}
         metodoPagoSeleccionadoId={metodoPagoSeleccionadoId}
         onFinalizar={handleFinalizarPedido}
+        onImprimir={imprimirComanda}
       />
 
       {error && <p className="text-sm text-red-400">{error}</p>}
 
-      {/* ===========================
-          LAYOUT POS EN DOS COLUMNAS
-         =========================== */}
-
       <div
         className="
           grid gap-4
-          sm:grid-cols-[minmax(0,1fr)_360px]   /* 2 columnas desde 640px */
-          xl:grid-cols-[minmax(0,1fr)_420px]   /* desktop ancho panel */
+          sm:grid-cols-[minmax(0,1fr)_360px]
+          xl:grid-cols-[minmax(0,1fr)_420px]
           w-full overflow-x-hidden
         "
       >
@@ -92,13 +90,14 @@ export default function PedidoPage() {
         />
       </div>
 
-      {/* TOTAL SOLO EN MOBILE */}
+      {/* === BARRA INFERIOR – SOLO MÓVIL === */}
       <div
         className="
           fixed bottom-0 left-0 right-0 
           bg-[var(--bg-card)]/95 backdrop-blur-xl
           border-t border-[var(--border-color)]
-          px-4 py-3 flex items-center justify-between
+          px-4 py-3 
+          flex items-center justify-between gap-3
           sm:hidden
           shadow-lg
         "
@@ -106,6 +105,23 @@ export default function PedidoPage() {
         <span className="text-lg font-semibold text-[var(--text-main)]">
           Q {total.toFixed(2)}
         </span>
+
+        <button
+          onClick={imprimirComanda}
+          disabled={detalles.length === 0}
+          className="
+            flex-1 inline-flex items-center justify-center
+            rounded-[var(--radius-md)]
+            bg-sky-500 
+            px-4 py-2
+            text-sm font-semibold text-white
+            hover:bg-sky-600
+            disabled:opacity-50 disabled:cursor-not-allowed
+            active:scale-[0.97] transition
+          "
+        >
+          Imprimir
+        </button>
 
         <button
           onClick={handleFinalizarPedido}
@@ -116,10 +132,12 @@ export default function PedidoPage() {
             !metodoPagoSeleccionadoId
           }
           className="
-            inline-flex items-center justify-center
+            flex-1 inline-flex items-center justify-center
             rounded-[var(--radius-md)]
-            bg-emerald-500 px-4 py-2
+            bg-emerald-500 
+            px-4 py-2
             text-sm font-semibold text-white
+            hover:bg-emerald-600
             disabled:opacity-50 disabled:cursor-not-allowed
             active:scale-[0.97] transition
           "
